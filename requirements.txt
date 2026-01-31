@@ -4,7 +4,6 @@ ta
 scikit-learn
 streamlit
 plotly
-xgboost
 numpy
 joblib
 ccxt
