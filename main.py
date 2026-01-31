@@ -36,7 +36,14 @@ if __name__ == "__main__":
         "DOGE/USDT",
         "MATIC/USDT",
         "DOT/USDT",
-        "AVAX/USDT"
+        "AVAX/USDT",
+        "HYPE/USDT",
+        "PEPE/USDT",
+        "SUI/USDT",
+        "ENA/USDT",
+        "KAS/USDT",
+        "ZEC/USDT",
+        "XMR/USDT"
     ])
     logger = PredictionLogger(log_dir="logs")
     
