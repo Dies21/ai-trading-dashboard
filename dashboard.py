@@ -493,12 +493,6 @@ elif page == "🔴 Прогнози DOWN":
                 width='stretch',
                 hide_index=True
             )
-            
-            st.dataframe(
-                display_df[['timestamp', 'symbol', 'confidence', 'close_price', 'accuracy']],
-                width='stretch',
-                hide_index=True
-            )
 
 # ==================== СТОРІНКА 2: ЛОГИ ====================
 elif page == "📉 Логи прогнозів":
