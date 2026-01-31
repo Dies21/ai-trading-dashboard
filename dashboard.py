@@ -355,13 +355,20 @@ elif page == "🟢 Прогнози UP":
     
     df = load_predictions()
     
+    st.info(f"📊 Загальна кількість прогнозів: {len(df)}")
+    
     if len(df) == 0:
         st.warning("📭 Немає даних у логах.")
     else:
+        # Покажемо розподіл прогнозів
+        pred_counts = df['prediction'].value_counts()
+        st.write("Розподіл прогнозів:", pred_counts.to_dict())
+        
         up_df = df[df['prediction'] == 'UP'].copy()
         
         if len(up_df) == 0:
-            st.info("🔵 Немає прогнозів на зростання")
+            st.error("❌ Немає прогнозів на зростання у даних")
+            st.write("Унікальні значення prediction:", df['prediction'].unique())
         else:
             # Метрики
             col1, col2, col3, col4 = st.columns(4)
@@ -399,13 +406,20 @@ elif page == "🔴 Прогнози DOWN":
     
     df = load_predictions()
     
+    st.info(f"📊 Загальна кількість прогнозів: {len(df)}")
+    
     if len(df) == 0:
         st.warning("📭 Немає даних у логах.")
     else:
+        # Покажемо розподіл прогнозів
+        pred_counts = df['prediction'].value_counts()
+        st.write("Розподіл прогнозів:", pred_counts.to_dict())
+        
         down_df = df[df['prediction'] == 'DOWN'].copy()
         
         if len(down_df) == 0:
-            st.info("🔴 Немає прогнозів на падіння")
+            st.error("❌ Немає прогнозів на падіння у даних")
+            st.write("Унікальні значення prediction:", df['prediction'].unique())
         else:
             # Метрики
             col1, col2, col3, col4 = st.columns(4)
