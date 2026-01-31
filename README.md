@@ -1,3 +1,62 @@
+**AI Trading Dashboard — Развёртывание**
+
+- **Кратко:** этот репозиторий содержит Streamlit-дэшборд `dashboard.py` и Dockerfile для контейнерного развёртывания. CI собирает и пушит образ в GitHub Container Registry (GHCR).
+
+**Локальная разработка**
+
+- Создайте виртуальное окружение и установите зависимости:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements-deploy.txt
+```
+
+- Запуск Streamlit локально:
+
+```powershell
+streamlit run dashboard.py --server.port 8502
+```
+
+**Сборка Docker-образа локально**
+
+```powershell
+docker build -t ai-dashboard .
+docker run --rm -p 8501:8501 --name ai-dashboard-run ai-dashboard
+```
+
+Если Docker Desktop требует WSL2, установите WSL и перезагрузите систему. Проверьте `wsl -l -v`.
+
+**Публикация в GitHub Container Registry (GHCR)**
+
+1. Workflow `/.github/workflows/docker-build-push.yml` автоматически собирает и пушит образ при push в `main`.
+2. Workflow помечает образ тегами `latest` и с commit SHA.
+3. Альтернативно можно вручную залогиниться и запушить:
+
+```powershell
+docker login ghcr.io -u <GITHUB_USERNAME>
+# введите PAT с правами packages:write
+docker tag ai-dashboard ghcr.io/<OWNER>/ai-trading-dashboard:latest
+docker push ghcr.io/<OWNER>/ai-trading-dashboard:latest
+```
+
+**Развёртывание контейнера как публичного сайта**
+
+Варианты:
+- Render: создайте Web Service и укажите Docker image из GHCR (`ghcr.io/<OWNER>/ai-trading-dashboard:latest`). Render автоматически запускает контейнер и пробрасывает порт.
+- Fly.io / Railway: аналогично — используйте image из GHCR или настройте автоматический деплой из репозитория.
+
+Пример для Render:
+1. Войдите в Render, создайте New → Web Service.
+2. Choose "Docker" и укажите image `ghcr.io/<OWNER>/ai-trading-dashboard:latest`.
+3. Нажмите Create — сервис запустит контейнер и сделает его доступным по публичному URL.
+
+**Советы по безопасности**
+- PAT (если используете вручную) храните в GitHub Secrets или в менеджере секретов провайдера.
+- Если приложение использует ключи API (например CCXT), храните их в переменных окружения в хостинге (Render Secrets, GitHub Secrets для Actions и т.д.).
+
+Если хотите — могу автоматически добавить инструкцию по деплою на Render в workflow (CI → deploy). Скажите, куда именно вы хотите сразу задеплоить: `Render`, `Fly`, `Railway` или `Другой`.
 # AI Trading Bot — Dashboard
 
 This repository contains a Streamlit dashboard for monitoring the AI trading system (predictions, logs, P&L, stats).
