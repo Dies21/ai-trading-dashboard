@@ -60,7 +60,7 @@ st.markdown("---")
 # Бічне меню
 page = st.sidebar.radio(
     "Навігація",
-    ["📊 Огляд", "📉 Логи прогнозів", "📋 Статистика", "⚙️ Керування", "📖 Інструкція"]
+    ["📊 Огляд", "� Прогнози UP", "🔴 Прогнози DOWN", "�📉 Логи прогнозів", "📋 Статистика", "⚙️ Керування", "📖 Інструкція"]
 )
 
 # Кнопка оновлення даних (очищає кеш і перезавантажує сторінку)
@@ -245,8 +245,58 @@ if page == "📊 Огляд":
         
         st.markdown("---")
         
-        # Графики
+        # Графики по точности UP и DOWN
         col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("🟢 Точність прогнозів на ЗРОСТАННЯ")
+            up_df = df[df['prediction'] == 'UP'].copy()
+            if len(up_df) > 0:
+                up_df['accuracy_float'] = up_df['accuracy'].astype(float)
+                success_up = (up_df['accuracy_float'] > 0.5).sum()
+                fail_up = (up_df['accuracy_float'] <= 0.5).sum()
+                
+                if success_up + fail_up > 0:
+                    fig = px.pie(
+                        values=[success_up, fail_up],
+                        names=['Успіх', 'Невдача'],
+                        color_discrete_map={'Успіх': '#00cc00', 'Невдача': '#ff6b6b'},
+                        hole=0.3
+                    )
+                    fig.update_traces(
+                        hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
+                    )
+                    st.plotly_chart(fig, width='stretch')
+                    st.metric(f"Успішних: {success_up} / {success_up + fail_up}", f"{success_up/(success_up + fail_up):.1%}" if success_up + fail_up > 0 else "N/A")
+            else:
+                st.info("🔵 Немає прогнозів на зростання")
+        
+        with col2:
+            st.subheader("🔴 Точність прогнозів на ПАДІННЯ")
+            down_df = df[df['prediction'] == 'DOWN'].copy()
+            if len(down_df) > 0:
+                down_df['accuracy_float'] = down_df['accuracy'].astype(float)
+                success_down = (down_df['accuracy_float'] > 0.5).sum()
+                fail_down = (down_df['accuracy_float'] <= 0.5).sum()
+                
+                if success_down + fail_down > 0:
+                    fig = px.pie(
+                        values=[success_down, fail_down],
+                        names=['Успіх', 'Невдача'],
+                        color_discrete_map={'Успіх': '#ff0000', 'Невдача': '#ff6b6b'},
+                        hole=0.3
+                    )
+                    fig.update_traces(
+                        hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
+                    )
+                    st.plotly_chart(fig, width='stretch')
+                    st.metric(f"Успішних: {success_down} / {success_down + fail_down}", f"{success_down/(success_down + fail_down):.1%}" if success_down + fail_down > 0 else "N/A")
+            else:
+                st.info("🔴 Немає прогнозів на падіння")
+        
+        st.markdown("---")
+        
+        # Графики
         
         with col1:
             st.subheader("📊 Розподіл прогнозів")
@@ -298,6 +348,94 @@ if page == "📊 Огляд":
             with col3:
                 avg_acc = symbol_df['accuracy'].astype(float).mean()
                 st.metric(f"{symbol} - Точність", f"{avg_acc:.2%}")
+
+# ==================== СТОРІНКА 1.5: ПРОГНОЗИ UP ====================
+elif page == "🟢 Прогнози UP":
+    st.header("🟢 Детальний аналіз прогнозів на ЗРОСТАННЯ")
+    
+    df = load_predictions()
+    
+    if len(df) == 0:
+        st.warning("📭 Немає даних у логах.")
+    else:
+        up_df = df[df['prediction'] == 'UP'].copy()
+        
+        if len(up_df) == 0:
+            st.info("🔵 Немає прогнозів на зростання")
+        else:
+            # Метрики
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Всього UP", len(up_df))
+            with col2:
+                up_df['accuracy_float'] = up_df['accuracy'].astype(float)
+                success = (up_df['accuracy_float'] > 0.5).sum()
+                st.metric("Успішних", success)
+            with col3:
+                fail = (up_df['accuracy_float'] <= 0.5).sum()
+                st.metric("Невдач", fail)
+            with col4:
+                win_rate = success / len(up_df) if len(up_df) > 0 else 0
+                st.metric("Win Rate", f"{win_rate:.1%}")
+            
+            st.markdown("---")
+            
+            # Таблиця UP прогнозів
+            display_df = up_df.copy()
+            display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
+            display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
+            display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
+            display_df['accuracy'] = display_df['accuracy'].astype(float).apply(lambda x: f"{x:.2%}")
+            
+            st.dataframe(
+                display_df[['timestamp', 'symbol', 'confidence', 'close_price', 'accuracy']],
+                width='stretch',
+                hide_index=True
+            )
+
+# ==================== СТОРІНКА 1.7: ПРОГНОЗИ DOWN ====================
+elif page == "🔴 Прогнози DOWN":
+    st.header("🔴 Детальний аналіз прогнозів на ПАДІННЯ")
+    
+    df = load_predictions()
+    
+    if len(df) == 0:
+        st.warning("📭 Немає даних у логах.")
+    else:
+        down_df = df[df['prediction'] == 'DOWN'].copy()
+        
+        if len(down_df) == 0:
+            st.info("🔴 Немає прогнозів на падіння")
+        else:
+            # Метрики
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Всього DOWN", len(down_df))
+            with col2:
+                down_df['accuracy_float'] = down_df['accuracy'].astype(float)
+                success = (down_df['accuracy_float'] > 0.5).sum()
+                st.metric("Успішних", success)
+            with col3:
+                fail = (down_df['accuracy_float'] <= 0.5).sum()
+                st.metric("Невдач", fail)
+            with col4:
+                win_rate = success / len(down_df) if len(down_df) > 0 else 0
+                st.metric("Win Rate", f"{win_rate:.1%}")
+            
+            st.markdown("---")
+            
+            # Таблиця DOWN прогнозів
+            display_df = down_df.copy()
+            display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
+            display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
+            display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
+            display_df['accuracy'] = display_df['accuracy'].astype(float).apply(lambda x: f"{x:.2%}")
+            
+            st.dataframe(
+                display_df[['timestamp', 'symbol', 'confidence', 'close_price', 'accuracy']],
+                width='stretch',
+                hide_index=True
+            )
 
 # ==================== СТОРІНКА 2: ЛОГИ ====================
 elif page == "📉 Логи прогнозів":
