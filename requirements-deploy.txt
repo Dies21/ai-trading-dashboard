@@ -7,3 +7,12 @@ plotly
 xgboost
 numpy
 joblib
+ccxt
+pandas
+ta
+scikit-learn
+streamlit
+plotly
+xgboost
+numpy
+joblib
