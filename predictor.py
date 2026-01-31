@@ -1,19 +1,22 @@
-def predict_next(model, df, confidence_threshold=0.55):
+def predict_next(model, df, up_threshold=0.55, down_threshold=0.50):
     """Предсказать следующее движение с учётом уверенности модели.
     
     Аргументы:
         model: Обученная модель
         df: DataFrame с данными
-        confidence_threshold: Минимальная уверенность для предсказания (0-1)
+        up_threshold: Минимальная уверенность для UP предсказания (0-1)
+        down_threshold: Минимальная уверенность для DOWN предсказания (0-1)
     
     Возвращает:
-        tuple: (prediction, confidence)
+        tuple: (prediction, confidence, prob_down, prob_up)
             prediction: 'UP' (Вверх), 'DOWN' (Вниз), или 'UNSURE' (Неуверен)
             confidence: уверенность модели (0-1)
+            prob_down: вероятность DOWN
+            prob_up: вероятность UP
     """
     from model import FEATURES
     if df.empty:
-        return "NO_DATA", 0.0
+        return "NO_DATA", 0.0, 0.0, 0.0
     
     # Получить последний ряд и нормализовать его через scaler модели
     last_row = df[FEATURES].iloc[-1:]
@@ -28,11 +31,10 @@ def predict_next(model, df, confidence_threshold=0.55):
     prob_up = proba[1]  # Вероятность класса "UP"
     prob_down = proba[0]  # Вероятность класса "DOWN"
     
-    # Предсказывать только если модель уверена
-    max_confidence = max(prob_up, prob_down)
-    
-    if max_confidence < confidence_threshold:
-        return "UNSURE", max_confidence
-    
-    prediction = "UP" if prob_up > prob_down else "DOWN"
-    return prediction, max_confidence
+    # Разные пороги для UP и DOWN для более сбалансированных сигналов
+    if prob_down > prob_up and prob_down >= down_threshold:
+        return "DOWN", prob_down, prob_down, prob_up
+    elif prob_up > prob_down and prob_up >= up_threshold:
+        return "UP", prob_up, prob_down, prob_up
+    else:
+        return "UNSURE", max(prob_up, prob_down), prob_down, prob_up
