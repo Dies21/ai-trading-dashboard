@@ -424,10 +424,12 @@ elif page == "🟢 Прогнози UP":
 # ==================== СТОРІНКА 1.7: ПРОГНОЗИ DOWN ====================
 elif page == "🔴 Прогнози DOWN":
     st.header("🔴 Детальний аналіз прогнозів на ПАДІННЯ")
-        if st.button("🔄 Перезавантажити дані"):
+    
+    if st.button("🔄 Перезавантажити дані"):
         st.cache_data.clear()
         safe_rerun()
-        df = load_predictions()
+    
+    df = load_predictions()
     
     # Детальна діагностика
     with st.expander("🔧 Діагностика (натисніть для розгортання)"):
