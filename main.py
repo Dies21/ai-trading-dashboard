@@ -81,8 +81,8 @@ if __name__ == "__main__":
                 # Оценка модели
                 metrics = evaluate_model(model, df)
 
-                # Предсказание с уверенностью (нижчі пороги для більше сигналів)
-                prediction, confidence, prob_down, prob_up, reliability = predict_next(model, df, up_threshold=0.50, down_threshold=0.45)
+                # Предсказание с агрессивными DOWN трешолдами
+                prediction, confidence, prob_down, prob_up, reliability = predict_next(model, df, up_threshold=0.48, down_threshold=0.35)
                 
                 # Красивый вывод предсказания
                 if prediction == "UP":
