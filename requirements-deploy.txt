@@ -6,7 +6,7 @@ streamlit
 plotly
 numpy
 joblib
-altair
+altair==4.2.2
 ccxt
 pandas
 ta
