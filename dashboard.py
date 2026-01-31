@@ -7,6 +7,24 @@ from pathlib import Path
 import json
 import time
 
+# Безопасная обёртка для перезапуска Streamlit (учитывает разные верси и отсутствия API)
+def safe_rerun():
+    try:
+        if hasattr(st, 'experimental_rerun'):
+            try:
+                st.experimental_rerun()
+                return
+            except Exception:
+                pass
+        if hasattr(st, 'rerun'):
+            try:
+                st.rerun()
+                return
+            except Exception:
+                pass
+    except Exception:
+        pass
+
 # Налаштування сторінки
 st.set_page_config(
     page_title="AI Trading Bot Dashboard",
@@ -48,10 +66,11 @@ page = st.sidebar.radio(
 # Кнопка оновлення даних (очищає кеш і перезавантажує сторінку)
 if st.sidebar.button("🔄 Оновити дані"):
     try:
-        st.cache_data.clear()
+        if hasattr(st, 'cache_data') and hasattr(st.cache_data, 'clear'):
+            st.cache_data.clear()
     except Exception:
         pass
-    st.experimental_rerun()
+    safe_rerun()
 
 # Автооновлення: чекбокс і інтервал (секунди)
 auto_refresh = st.sidebar.checkbox("⏱️ Автооновлення", value=False)
@@ -67,7 +86,7 @@ if auto_refresh:
     st.sidebar.caption(f"Оновлення кожні {interval} с")
     try:
         time.sleep(interval)
-        st.experimental_rerun()
+        safe_rerun()
     except Exception:
         pass
 
@@ -391,7 +410,7 @@ elif page == "⚙️ Керування":
                 if st.button(f"🗑️", key=f"remove_{symbol}"):
                     loader.remove_symbol(symbol)
                     st.success(f"✅ {symbol} видалено")
-                    st.rerun()
+                    safe_rerun()
     except Exception as e:
         st.error(f"❌ Ошибка загрузки активов: {e}")
     
@@ -431,7 +450,7 @@ elif page == "⚙️ Керування":
             if log_file.exists():
                 log_file.unlink()
                 st.success("✅ Логи очищено")
-                st.rerun()
+                safe_rerun()
 
 # ==================== СТОРІНКА 5: ІНСТРУКЦІЯ ====================
 elif page == "📖 Інструкція":
