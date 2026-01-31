@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split, cross_val_score, GridSearc
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, classification_report
 
-FEATURES = ["open","high","low","close","volume","rsi","ema_20","ema_50","macd","atr","bb_position","stoch_k","stoch_d","volume_ma_20","volume_ratio","obv","ad","vroc"]
+FEATURES = ["open","high","low","close","volume","rsi","ema_20","ema_50","macd","atr","bb_position","stoch_k","stoch_d","volume_ma_20","volume_ratio","obv","ad","vroc","rsi_overbought","price_above_bb","macd_negative_divergence","death_cross","volume_divergence"]
 
 
 def calculate_sample_weights(y, price_changes):

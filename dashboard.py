@@ -158,7 +158,7 @@ if page == "📊 Огляд":
         st.warning("📭 Немає даних у логах. Запустіть main.py для накопичення даних.")
     else:
         # Ключевые метрики
-        col1, col2, col3, col4 = st.columns(4)
+        col1, col2, col3, col4, col5 = st.columns(5)
         
         with col1:
             st.metric(
@@ -179,15 +179,23 @@ if page == "📊 Огляд":
         
         with col3:
             up_count = len(df[df['prediction'] == 'UP'])
-            down_count = len(df[df['prediction'] == 'DOWN'])
             st.metric(
-                "UP / DOWN",
-                f"{up_count} / {down_count}",
+                "🟢 Сигналів на зростання",
+                up_count,
                 delta=None,
                 delta_color="off"
             )
         
         with col4:
+            down_count = len(df[df['prediction'] == 'DOWN'])
+            st.metric(
+                "🔴 Сигналів на падіння",
+                down_count,
+                delta=None,
+                delta_color="off"
+            )
+        
+        with col5:
             avg_confidence = df['confidence'].astype(float).mean()
             st.metric(
                 "Середня впевненість",
@@ -204,10 +212,10 @@ if page == "📊 Огляд":
         latest['confidence'] = latest['confidence'].astype(float)
         latest['accuracy'] = latest['accuracy'].astype(float)
         
-        # Форматування
+        # Форматування з цветовыми індикаторами
         latest['Час'] = pd.to_datetime(latest['timestamp']).dt.strftime('%Y-%m-%d %H:%M')
         latest['Актив'] = latest['symbol']
-        latest['Прогноз'] = latest['prediction'].apply(lambda x: '⬆ UP' if x == 'UP' else '⬇ DOWN' if x == 'DOWN' else '❓ UNSURE')
+        latest['Прогноз'] = latest['prediction'].apply(lambda x: '🟢 UP' if x == 'UP' else '🔴 DOWN' if x == 'DOWN' else '⚪ UNSURE')
         latest['Впевненість'] = latest['confidence'].apply(lambda x: f"{x:.2%}")
         latest['Ціна'] = latest['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
         latest['Точність'] = latest['accuracy'].astype(float).apply(lambda x: f"{x:.2%}")
@@ -217,6 +225,23 @@ if page == "📊 Огляд":
             width='stretch',
             hide_index=True
         )
+        
+        # Додатково: активні сигнали на падіння
+        down_signals = df[df['prediction'] == 'DOWN'].tail(5)
+        if len(down_signals) > 0:
+            st.markdown("---")
+            st.subheader("🔴 Останні сигнали на ПАДІННЯ")
+            down_display = down_signals[['timestamp', 'symbol', 'confidence', 'close_price']].copy()
+            down_display['Час'] = pd.to_datetime(down_display['timestamp']).dt.strftime('%Y-%m-%d %H:%M')
+            down_display['Актив'] = down_display['symbol']
+            down_display['Впевненість'] = down_display['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
+            down_display['Ціна'] = down_display['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
+            
+            st.dataframe(
+                down_display[['Час', 'Актив', 'Впевненість', 'Ціна']],
+                width='stretch',
+                hide_index=True
+            )
         
         st.markdown("---")
         

@@ -33,4 +33,20 @@ def add_indicators(df):
     # Volume Rate of Change (VROC)
     df["vroc"] = ta.volume.volume_price_trend(df["close"], df["volume"])
     
+    # Медвежі сигнали (bearish indicators) для кращого прогнозування падіння
+    # 1. Перевищення в перекупленій зоні RSI (RSI > 70 - можлива корекція вниз)
+    df["rsi_overbought"] = (df["rsi"] > 70).astype(int)
+    
+    # 2. Ціна вище верхньої полоси Боллінджера (можливе повернення до середньої)
+    df["price_above_bb"] = (df["close"] > bb_high).astype(int)
+    
+    # 3. Негативна дивергенція MACD (ціна зростає, але MACD падає)
+    df["macd_negative_divergence"] = ((df["close"].diff() > 0) & (df["macd"].diff() < 0)).astype(int)
+    
+    # 4. "Death Cross" - швидка EMA перетинає повільну EMA зверху вниз
+    df["death_cross"] = ((df["ema_20"] < df["ema_50"]) & (df["ema_20"].shift(1) >= df["ema_50"].shift(1))).astype(int)
+    
+    # 5. Падіння обсягу при зростанні ціни (слабкий зростання - можливий розворот)
+    df["volume_divergence"] = ((df["close"].diff() > 0) & (df["volume"].diff() < 0)).astype(int)
+    
     return df.fillna(0)
