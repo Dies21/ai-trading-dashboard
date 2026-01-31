@@ -109,3 +109,36 @@ def detect_all_patterns(df):
     df = detect_three_white_soldiers(df)
     df = detect_three_black_crows(df)
     return df
+
+def calculate_pattern_confidence(df):
+    """Рассчитать отдельно уверенность в UP (бычьих паттернах) и DOWN (медвежьих)
+    
+    Возвращает:
+        tuple: (confidence_up, confidence_down)
+            confidence_up: сумма бычьих паттернов (0-4)
+            confidence_down: сумма медвежьих паттернов (0-4)
+    """
+    if df.empty:
+        return 0, 0
+    
+    last_row = df.iloc[-1]
+    
+    # Бычьи паттерны (указывают на рост)
+    bullish_patterns = [
+        last_row.get('hammer', 0),
+        last_row.get('bullish_engulfing', 0),
+        last_row.get('morning_star', 0),
+        last_row.get('three_white_soldiers', 0),
+    ]
+    confidence_up = sum(bullish_patterns)
+    
+    # Медвежьи паттерны (указывают на падение)
+    bearish_patterns = [
+        last_row.get('shooting_star', 0),
+        last_row.get('bearish_engulfing', 0),
+        last_row.get('evening_star', 0),
+        last_row.get('three_black_crows', 0),
+    ]
+    confidence_down = sum(bearish_patterns)
+    
+    return confidence_up, confidence_down

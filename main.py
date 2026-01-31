@@ -81,8 +81,8 @@ if __name__ == "__main__":
                 # Оценка модели
                 metrics = evaluate_model(model, df)
 
-                # Предсказание с агрессивными DOWN трешолдами
-                prediction, confidence, prob_down, prob_up, reliability = predict_next(model, df, up_threshold=0.48, down_threshold=0.35)
+                # Предсказание с агрессивными DOWN трешолдами и учётом паттернов
+                prediction, confidence, prob_down, prob_up, reliability, pattern_up, pattern_down = predict_next(model, df, up_threshold=0.48, down_threshold=0.35)
                 
                 # Красивый вывод предсказания
                 if prediction == "UP":
@@ -106,6 +106,7 @@ if __name__ == "__main__":
                 
                 print(f"\n🎯 Прогноз: {emoji}")
                 print(f"   Уверенность: {confidence:.2%} (DOWN: {prob_down:.2%}, UP: {prob_up:.2%})")
+                print(f"   Паттерны: 🔴 DOWN={pattern_down} | 🟢 UP={pattern_up}")
                 print(f"   Надёжность: {rel_emoji}")
                 
                 # Данные для логирования
