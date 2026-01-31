@@ -75,9 +75,35 @@ if auto_refresh:
 @st.cache_data
 def load_predictions():
     log_file = Path("logs/predictions.csv")
-    if log_file.exists():
-        return pd.read_csv(log_file)
-    return pd.DataFrame()
+    if not log_file.exists():
+        return pd.DataFrame()
+
+    df = pd.read_csv(log_file)
+
+    # Безопасное приведение типов и очистка полей
+    if 'timestamp' in df.columns:
+        try:
+            df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+        except Exception:
+            df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+
+    numeric_cols = ['confidence', 'accuracy', 'close_price', 'volume', 'p_and_l', 'balance_simulated']
+    for col in numeric_cols:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0)
+
+    # win_rate может приходить как '52.2%'; очистим и приведём к float (52.2)
+    if 'win_rate' in df.columns:
+        def parse_win_rate(x):
+            try:
+                if isinstance(x, str) and x.strip().endswith('%'):
+                    return float(x.strip().replace('%', ''))
+                return float(x)
+            except Exception:
+                return 0.0
+        df['win_rate'] = df['win_rate'].apply(parse_win_rate)
+
+    return df
 
 def load_statistics():
     from logger import PredictionLogger
