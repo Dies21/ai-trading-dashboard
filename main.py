@@ -1,0 +1,124 @@
+import time
+from data_loader import CryptoDataLoader
+from features import add_indicators
+from patterns import detect_hammer
+from model import train_model, evaluate_model, analyze_feature_importance
+from predictor import predict_next
+from logger import PredictionLogger
+
+if __name__ == "__main__":
+    # Инициализация
+    loader = CryptoDataLoader(symbols=["BTC/USDT", "ETH/USDT"])  # Можно добавить больше
+    logger = PredictionLogger(log_dir="logs")
+    
+    iteration = 0
+    total_predictions = 0
+    profitable_predictions = 0
+
+    while True:
+        iteration += 1
+        print(f"\n{'='*70}")
+        print(f"Итерация {iteration} | {time.strftime('%Y-%m-%d %H:%M:%S')}")
+        print(f"{'='*70}\n")
+        
+        try:
+            # Загрузить данные для всех активов
+            data_dict = loader.fetch_multiple(timeframe="1h", limit=500)
+            
+            if not data_dict:
+                print("Ошибка: не удалось загрузить данные")
+                time.sleep(60)
+                continue
+            
+            # Обработать каждый актив
+            for symbol, df in data_dict.items():
+                print(f"\n📊 Анализирую {symbol}...")
+                print("-" * 70)
+                
+                df = add_indicators(df)
+                df = detect_hammer(df)
+
+                # Обучить модель один раз на все данные
+                model = train_model(df)
+                
+                # Анализ важности признаков
+                analyze_feature_importance(model, top_n=3)
+                
+                # Оценка модели
+                metrics = evaluate_model(model, df)
+
+                # Предсказание с уверенностью
+                prediction, confidence = predict_next(model, df, confidence_threshold=0.55)
+                
+                # Красивый вывод предсказания
+                if prediction == "UP":
+                    emoji = "⬆ Вверх"
+                elif prediction == "DOWN":
+                    emoji = "⬇ Вниз"
+                elif prediction == "UNSURE":
+                    emoji = "❓ Неуверен"
+                else:
+                    emoji = "⚠ Нет данных"
+                
+                print(f"\n🎯 Прогноз: {emoji}")
+                print(f"   Уверенность: {confidence:.2%}")
+                
+                # Данные для логирования
+                close_price = df["close"].iloc[-1]
+                volume = df["volume"].iloc[-1]
+                
+                # Получить метрики из evaluate_model (это словарь)
+                accuracy = metrics.get("accuracy", 0)
+                win_rate = metrics.get("f1", 0) * 100  # Приблизительная оценка
+                
+                # Симулированная торговля (простая версия)
+                balance_change = 100 * accuracy - 50  # Упрощённая формула
+                
+                # Логировать предсказание
+                log_entry = logger.log_prediction(
+                    symbol=symbol,
+                    prediction=prediction,
+                    confidence=confidence,
+                    close_price=close_price,
+                    volume=volume,
+                    balance_simulated=1000 + balance_change,
+                    p_and_l=balance_change,
+                    accuracy=accuracy,
+                    win_rate=win_rate
+                )
+                
+                print(f"\n💾 Данные логированы:")
+                print(f"   Цена: ${close_price:.2f}")
+                print(f"   Объём: {volume:.0f}")
+                print(f"   Точность: {accuracy:.2%}")
+                
+                # Статистика
+                total_predictions += 1
+                if prediction in ["UP", "DOWN"] and confidence > 0.6:
+                    profitable_predictions += 1
+            
+            # Итоги итерации
+            print(f"\n{'='*70}")
+            print(f"ИТОГИ ИТЕРАЦИИ #{iteration}")
+            print(f"Активов проанализировано: {len(data_dict)}")
+            print(f"Всего предсказаний: {total_predictions}")
+            print(f"Уверенных предсказаний: {profitable_predictions}")
+            
+            # Статистика
+            stats = logger.get_statistics()
+            if stats:
+                print(f"\n📈 Статистика:")
+                print(f"   Всего записей: {stats['total_predictions']}")
+                print(f"   Активов: {stats['symbols']}")
+                print(f"   Средняя уверенность: {stats['avg_confidence']:.2%}")
+                print(f"   UP: {stats['up_predictions']} | DOWN: {stats['down_predictions']} | UNSURE: {stats['unsure_predictions']}")
+            
+            print(f"\n⏱️  Следующая итерация через 3600 сек (1 час)...\n")
+            
+        except Exception as e:
+            print(f"❌ Ошибка: {e}\n")
+            import traceback
+            traceback.print_exc()
+        
+        # Ждём час перед следующей итерацией (для 1h свечей)
+        time.sleep(3600)
