@@ -95,6 +95,25 @@ if auto_refresh:
 def load_predictions():
     log_file = Path("logs/predictions.csv")
     if not log_file.exists():
+        # Попытка загрузки файла логов из репозитория GitHub (raw URL).
+        # Это полезно для Streamlit Cloud, где локальные логи могут отсутствовать.
+        try:
+            import requests
+            from io import StringIO
+            # Попробуем стандартный путь к raw в GitHub (владелец/репо может отличаться)
+            raw_urls = [
+                "https://raw.githubusercontent.com/Dies21/ai-trading-dashboard/main/logs/predictions.csv",
+                "https://raw.githubusercontent.com/" + ("${GITHUB_REPOSITORY}" if "GITHUB_REPOSITORY" in globals() else "Dies21/ai-trading-dashboard") + "/main/logs/predictions.csv"
+            ]
+            for url in raw_urls:
+                try:
+                    r = requests.get(url, timeout=5)
+                    if r.status_code == 200 and r.text.strip():
+                        return pd.read_csv(StringIO(r.text))
+                except Exception:
+                    continue
+        except Exception:
+            pass
         return pd.DataFrame()
 
     df = pd.read_csv(log_file)
