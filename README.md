@@ -22,6 +22,8 @@ Deploy options:
 
 - Streamlit Cloud: push repo to GitHub and create app on share.streamlit.io (easy, free for public repos).
 - Deploy container to Render / Railway / DigitalOcean App / AWS ECS using the provided `Dockerfile` or `Procfile`.
+ - Build a Docker image and push to GitHub Container Registry (GHCR). A workflow is provided: `.github/workflows/docker-build-push.yml`.
+	 You can then deploy the image to Render/Cloud using the image `ghcr.io/<your-org>/ai-trading-dashboard:latest`.
 
 Keep-alive:
 
