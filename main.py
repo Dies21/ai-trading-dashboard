@@ -1,14 +1,43 @@
 import time
+import subprocess
+from datetime import datetime
 from data_loader import CryptoDataLoader
 from features import add_indicators
-from patterns import detect_hammer
+from patterns import detect_all_patterns
 from model import train_model, evaluate_model, analyze_feature_importance
 from predictor import predict_next
 from logger import PredictionLogger
 
+def auto_push_logs():
+    """Автоматически отправляет обновленные логи в GitHub"""
+    try:
+        print("\n📤 Отправка данных на сайт...")
+        subprocess.run(["git", "add", "-f", "logs/predictions.csv"], check=False, capture_output=True)
+        commit_msg = f"auto-update: predictions {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        result = subprocess.run(["git", "commit", "-m", commit_msg], check=False, capture_output=True, text=True)
+        
+        if "nothing to commit" not in result.stdout:
+            subprocess.run(["git", "push", "origin", "main"], check=False, capture_output=True)
+            print("✅ Данные успешно отправлены на сайт")
+        else:
+            print("ℹ️ Нет новых данных для отправки")
+    except Exception as e:
+        print(f"⚠️ Не удалось отправить данные: {e}")
+
 if __name__ == "__main__":
     # Инициализация
-    loader = CryptoDataLoader(symbols=["BTC/USDT", "ETH/USDT"])  # Можно добавить больше
+    loader = CryptoDataLoader(symbols=[
+        "BTC/USDT", 
+        "ETH/USDT",
+        "BNB/USDT",
+        "XRP/USDT",
+        "SOL/USDT",
+        "ADA/USDT",
+        "DOGE/USDT",
+        "MATIC/USDT",
+        "DOT/USDT",
+        "AVAX/USDT"
+    ])
     logger = PredictionLogger(log_dir="logs")
     
     iteration = 0
@@ -36,7 +65,7 @@ if __name__ == "__main__":
                 print("-" * 70)
                 
                 df = add_indicators(df)
-                df = detect_hammer(df)
+                df = detect_all_patterns(df)
 
                 # Обучить модель один раз на все данные
                 model = train_model(df)
@@ -113,12 +142,15 @@ if __name__ == "__main__":
                 print(f"   Средняя уверенность: {stats['avg_confidence']:.2%}")
                 print(f"   UP: {stats['up_predictions']} | DOWN: {stats['down_predictions']} | UNSURE: {stats['unsure_predictions']}")
             
-            print(f"\n⏱️  Следующая итерация через 3600 сек (1 час)...\n")
+            # Автоматическая отправка логов на сайт
+            auto_push_logs()
+            
+            print(f"\n⏱️  Следующая итерация через 1800 сек (30 минут)...\n")
             
         except Exception as e:
             print(f"❌ Ошибка: {e}\n")
             import traceback
             traceback.print_exc()
         
-        # Ждём час перед следующей итерацией (для 1h свечей)
-        time.sleep(3600)
+        # Ждём 30 минут перед следующей итерацией
+        time.sleep(1800)

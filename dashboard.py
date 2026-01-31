@@ -257,6 +257,9 @@ if page == "📊 Огляд":
                 color_discrete_map={'UP': '#00cc00', 'DOWN': '#ff0000', 'UNSURE': '#ffa500'},
                 hole=0.3
             )
+            fig.update_traces(
+                hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
+            )
             st.plotly_chart(fig, width='stretch')
         
         with col2:
@@ -270,7 +273,11 @@ if page == "📊 Огляд":
                 y='accuracy_float',
                 title='Зміна точності',
                 color='symbol',
-                markers=True
+                markers=True,
+                labels={'timestamp': 'Час', 'accuracy_float': 'Точність', 'symbol': 'Актив'}
+            )
+            fig.update_traces(
+                hovertemplate='<b>%{fullData.name}</b><br>Час: %{x|%Y-%m-%d %H:%M}<br>Точність: %{y:.2%}<extra></extra>'
             )
             fig.update_layout(hovermode='x unified')
             st.plotly_chart(fig, width='stretch')
@@ -414,7 +421,11 @@ elif page == "📋 Статистика":
                     x='timestamp',
                     y='confidence',
                     title=f'Впевненість для {symbol}',
-                    markers=True
+                    markers=True,
+                    labels={'timestamp': 'Час', 'confidence': 'Впевненість'}
+                )
+                fig.update_traces(
+                    hovertemplate='Час: %{x|%Y-%m-%d %H:%M}<br>Впевненість: %{y:.2%}<extra></extra>'
                 )
                 st.plotly_chart(fig, width='stretch')
 
