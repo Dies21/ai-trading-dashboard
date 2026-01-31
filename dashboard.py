@@ -355,20 +355,38 @@ elif page == "🟢 Прогнози UP":
     
     df = load_predictions()
     
-    st.info(f"📊 Загальна кількість прогнозів: {len(df)}")
+    # Детальна діагностика
+    with st.expander("🔧 Діагностика (натисніть для розгортання)"):
+        st.write(f"✅ Дані завантажені: {len(df)} рядків")
+        st.write(f"📋 Колонки: {list(df.columns)}")
+        if len(df) > 0:
+            st.write("📊 Перші 5 рядків:")
+            st.dataframe(df.head(5))
+            st.write("🏷️ Типи даних:")
+            st.write(df.dtypes)
+            st.write("📈 Розподіл по prediction:")
+            st.write(df['prediction'].value_counts())
+            st.write("🔍 Унікальні prediction (з repr):")
+            st.write([repr(x) for x in df['prediction'].unique()])
     
     if len(df) == 0:
-        st.warning("📭 Немає даних у логах.")
+        st.error("❌ Немає даних! Логи порожні.")
+        st.info("Збережіть файл logs/predictions.csv з даними або запустіть main.py")
     else:
         # Покажемо розподіл прогнозів
         pred_counts = df['prediction'].value_counts()
-        st.write("Розподіл прогнозів:", pred_counts.to_dict())
+        st.success(f"✅ Знайдено {len(df)} прогнозів")
+        st.write("**Розподіл по типам:**", pred_counts.to_dict())
         
-        up_df = df[df['prediction'] == 'UP'].copy()
+        # Фільтруємо з експліцитною перевіркою
+        up_mask = df['prediction'].astype(str).str.strip() == 'UP'
+        up_df = df[up_mask].copy()
+        
+        st.write(f"🟢 UP прогнозів: {len(up_df)}")
         
         if len(up_df) == 0:
-            st.error("❌ Немає прогнозів на зростання у даних")
-            st.write("Унікальні значення prediction:", df['prediction'].unique())
+            st.warning("⚠️ Немає UP прогнозів у даних")
+            st.info("Спробуйте вкладку 🔴 Прогнози DOWN для перевірки")
         else:
             # Метрики
             col1, col2, col3, col4 = st.columns(4)
@@ -406,20 +424,38 @@ elif page == "🔴 Прогнози DOWN":
     
     df = load_predictions()
     
-    st.info(f"📊 Загальна кількість прогнозів: {len(df)}")
+    # Детальна діагностика
+    with st.expander("🔧 Діагностика (натисніть для розгортання)"):
+        st.write(f"✅ Дані завантажені: {len(df)} рядків")
+        st.write(f"📋 Колонки: {list(df.columns)}")
+        if len(df) > 0:
+            st.write("📊 Перші 5 рядків:")
+            st.dataframe(df.head(5))
+            st.write("🏷️ Типи даних:")
+            st.write(df.dtypes)
+            st.write("📈 Розподіл по prediction:")
+            st.write(df['prediction'].value_counts())
+            st.write("🔍 Унікальні prediction (з repr):")
+            st.write([repr(x) for x in df['prediction'].unique()])
     
     if len(df) == 0:
-        st.warning("📭 Немає даних у логах.")
+        st.error("❌ Немає даних! Логи порожні.")
+        st.info("Збережіть файл logs/predictions.csv з даними або запустіть main.py")
     else:
         # Покажемо розподіл прогнозів
         pred_counts = df['prediction'].value_counts()
-        st.write("Розподіл прогнозів:", pred_counts.to_dict())
+        st.success(f"✅ Знайдено {len(df)} прогнозів")
+        st.write("**Розподіл по типам:**", pred_counts.to_dict())
         
-        down_df = df[df['prediction'] == 'DOWN'].copy()
+        # Фільтруємо з експліцитною перевіркою
+        down_mask = df['prediction'].astype(str).str.strip() == 'DOWN'
+        down_df = df[down_mask].copy()
+        
+        st.write(f"🔴 DOWN прогнозів: {len(down_df)}")
         
         if len(down_df) == 0:
-            st.error("❌ Немає прогнозів на падіння у даних")
-            st.write("Унікальні значення prediction:", df['prediction'].unique())
+            st.warning("⚠️ Немає DOWN прогнозів у даних")
+            st.info("Спробуйте вкладку 🟢 Прогнози UP для перевірки")
         else:
             # Метрики
             col1, col2, col3, col4 = st.columns(4)
@@ -444,6 +480,12 @@ elif page == "🔴 Прогнози DOWN":
             display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
             display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
             display_df['accuracy'] = display_df['accuracy'].astype(float).apply(lambda x: f"{x:.2%}")
+            
+            st.dataframe(
+                display_df[['timestamp', 'symbol', 'confidence', 'close_price', 'accuracy']],
+                width='stretch',
+                hide_index=True
+            )
             
             st.dataframe(
                 display_df[['timestamp', 'symbol', 'confidence', 'close_price', 'accuracy']],
