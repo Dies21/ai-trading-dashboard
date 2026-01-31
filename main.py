@@ -81,8 +81,8 @@ if __name__ == "__main__":
                 # Оценка модели
                 metrics = evaluate_model(model, df)
 
-                # Предсказание с уверенностью (нижчий поріг для DOWN)
-                prediction, confidence, prob_down, prob_up = predict_next(model, df, up_threshold=0.55, down_threshold=0.50)
+                # Предсказание с уверенностью (нижчі пороги для більше сигналів)
+                prediction, confidence, prob_down, prob_up, reliability = predict_next(model, df, up_threshold=0.50, down_threshold=0.45)
                 
                 # Красивый вывод предсказания
                 if prediction == "UP":
@@ -94,8 +94,19 @@ if __name__ == "__main__":
                 else:
                     emoji = "⚠ Нет данных"
                 
+                # Відображення надійності
+                if reliability == "HIGH":
+                    rel_emoji = "🟢 Висока"
+                elif reliability == "MEDIUM":
+                    rel_emoji = "🟡 Середня"
+                elif reliability == "LOW":
+                    rel_emoji = "🔴 Низька"
+                else:
+                    rel_emoji = "⚪ Невідома"
+                
                 print(f"\n🎯 Прогноз: {emoji}")
                 print(f"   Уверенность: {confidence:.2%} (DOWN: {prob_down:.2%}, UP: {prob_up:.2%})")
+                print(f"   Надёжность: {rel_emoji}")
                 
                 # Данные для логирования
                 close_price = df["close"].iloc[-1]
