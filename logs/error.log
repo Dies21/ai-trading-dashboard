@@ -1,0 +1,19 @@
+Traceback (most recent call last):
+  File "C:\Users\dediv\OneDrive\Робочий стіл\Ai try 1\main.py", line 71, in <module>
+    print(f"\n\U0001f4ca Анализирую {symbol}...")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\dediv\AppData\Local\Programs\Python\Python314\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\U0001f4ca' in position 2: character maps to <undefined>
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\dediv\OneDrive\Робочий стіл\Ai try 1\main.py", line 158, in <module>
+    print(f"\u274c Ошибка: {e}\n")
+    ~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\dediv\AppData\Local\Programs\Python\Python314\Lib\encodings\cp1251.py", line 19, in encode
+    return codecs.charmap_encode(input,self.errors,encoding_table)[0]
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode character '\u274c' in position 0: character maps to <undefined>

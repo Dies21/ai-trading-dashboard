@@ -1,9 +1,0 @@
-streamlit
-pandas
-numpy
-scikit-learn
-plotly
-altair==4.2.2
-ta
-ccxt
-joblib

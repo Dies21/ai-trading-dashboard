@@ -71,7 +71,7 @@ if __name__ == "__main__":
                 
                 # ПРОВЕРКА СТАРЫХ ПРОГНОЗОВ (resolve)
                 try:
-                    resolved_count = logger.resolve_predictions(symbol, df, horizon=3)
+                    resolved_count = logger.resolve_predictions(symbol, df, horizon=1)
                     if resolved_count > 0:
                         print(f"   ✅ Разрешено {resolved_count} старых прогнозов")
                 except Exception as e:
