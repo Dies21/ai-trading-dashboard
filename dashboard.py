@@ -498,7 +498,22 @@ elif page == "🟢 Прогнози UP":
             
             # Таблиця UP прогнозів
             display_df = up_df.copy()
-            display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Форматування timestamp
+            def format_ts(ts):
+                try:
+                    from datetime import datetime
+                    ts_str = str(ts).strip()
+                    for fmt in ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S']:
+                        try:
+                            return datetime.strptime(ts_str, fmt).strftime('%Y-%m-%d %H:%M')
+                        except:
+                            continue
+                    return datetime.fromisoformat(ts_str).strftime('%Y-%m-%d %H:%M')
+                except:
+                    return str(ts)[:16] if len(str(ts)) >= 16 else str(ts)
+            
+            display_df['timestamp'] = display_df['timestamp'].apply(format_ts)
             display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
             display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
             display_df['accuracy'] = display_df['accuracy'].astype(float).apply(lambda x: f"{x:.2%}")
@@ -584,7 +599,22 @@ elif page == "🔴 Прогнози DOWN":
             
             # Таблиця DOWN прогнозів
             display_df = down_df.copy()
-            display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Форматування timestamp
+            def format_ts(ts):
+                try:
+                    from datetime import datetime
+                    ts_str = str(ts).strip()
+                    for fmt in ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S']:
+                        try:
+                            return datetime.strptime(ts_str, fmt).strftime('%Y-%m-%d %H:%M')
+                        except:
+                            continue
+                    return datetime.fromisoformat(ts_str).strftime('%Y-%m-%d %H:%M')
+                except:
+                    return str(ts)[:16] if len(str(ts)) >= 16 else str(ts)
+            
+            display_df['timestamp'] = display_df['timestamp'].apply(format_ts)
             display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
             display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
             
@@ -645,7 +675,22 @@ elif page == "📉 Логи прогнозів":
         
         # Форматирование для отображения
         display_df = filtered_df.copy()
-        display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
+        
+        # Форматування timestamp
+        def format_ts(ts):
+            try:
+                from datetime import datetime
+                ts_str = str(ts).strip()
+                for fmt in ['%Y-%m-%dT%H:%M:%S.%f', '%Y-%m-%d %H:%M:%S.%f', '%Y-%m-%dT%H:%M:%S', '%Y-%m-%d %H:%M:%S']:
+                    try:
+                        return datetime.strptime(ts_str, fmt).strftime('%Y-%m-%d %H:%M')
+                    except:
+                        continue
+                return datetime.fromisoformat(ts_str).strftime('%Y-%m-%d %H:%M')
+            except:
+                return str(ts)[:16] if len(str(ts)) >= 16 else str(ts)
+        
+        display_df['timestamp'] = display_df['timestamp'].apply(format_ts)
         display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
         display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
         display_df['p_and_l'] = display_df['p_and_l'].astype(float).apply(lambda x: f"${x:+.2f}")
