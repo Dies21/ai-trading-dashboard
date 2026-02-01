@@ -332,7 +332,7 @@ if page == "📊 Огляд":
                     if success_up + fail_up > 0:
                         fig = px.pie(
                             values=[success_up, fail_up],
-                            names=['Успіх', 'Невдача'],
+                            names=['Невдача', 'Успіх'],
                             color_discrete_map={'Успіх': '#00cc00', 'Невдача': '#ff6b6b'},
                             hole=0.3
                         )
@@ -340,9 +340,10 @@ if page == "📊 Огляд":
                             hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
                         )
                         st.plotly_chart(fig, width='stretch')
-                        st.metric(f"Успішних: {success_up} / {success_up + fail_up}", f"{success_up/(success_up + fail_up):.1%}" if success_up + fail_up > 0 else "N/A")
+                        st.caption(f"Успішних: {success_up} / {len(resolved)}")
+                        st.metric("Точність", f"{success_up/len(resolved):.1%}")
                         if unresolved > 0:
-                            st.caption(f"⏳ Не розв'язано: {unresolved}")
+                            st.caption(f"⏳ Очікується: {unresolved}")
                     else:
                         st.info(f"⏳ Очікування розв'язання ({len(up_df)} прогнозів)")
                 else:
@@ -372,9 +373,10 @@ if page == "📊 Огляд":
                             hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
                         )
                         st.plotly_chart(fig, width='stretch')
-                        st.metric(f"Успішних: {success_down} / {success_down + fail_down}", f"{success_down/(success_down + fail_down):.1%}" if success_down + fail_down > 0 else "N/A")
+                        st.caption(f"Успішних: {success_down} / {len(resolved)}")
+                        st.metric("Точність", f"{success_down/len(resolved):.1%}")
                         if unresolved > 0:
-                            st.caption(f"⏳ Не розв'язано: {unresolved}")
+                            st.caption(f"⏳ Очікується: {unresolved}")
                     else:
                         st.info(f"⏳ Очікування розв'язання ({len(down_df)} прогнозів)")
                 else:
