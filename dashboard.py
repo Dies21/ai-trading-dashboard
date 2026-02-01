@@ -516,10 +516,17 @@ elif page == "🟢 Прогнози UP":
             display_df['timestamp'] = display_df['timestamp'].apply(format_ts)
             display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
             display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
-            display_df['accuracy'] = display_df['accuracy'].astype(float).apply(lambda x: f"{x:.2%}")
+            
+            # Додаємо колонку Результат з іконками
+            if 'is_correct' in display_df.columns:
+                display_df['Результат'] = display_df['is_correct'].apply(
+                    lambda x: '✅' if x == True or str(x).strip().lower() == 'true' else '❌' if x == False or str(x).strip().lower() == 'false' else '⏳'
+                )
+            else:
+                display_df['Результат'] = '⏳'
             
             st.dataframe(
-                display_df[['timestamp', 'symbol', 'confidence', 'close_price', 'accuracy']],
+                display_df[['timestamp', 'symbol', 'confidence', 'close_price', 'Результат']],
                 width='stretch',
                 hide_index=True
             )
