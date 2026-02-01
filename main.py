@@ -45,6 +45,12 @@ if __name__ == "__main__":
     ])
     logger = PredictionLogger(log_dir="logs")
     
+    # Настройки эффективности обучения
+    TRAIN_INTERVAL_HOURS = 6
+    MAX_TRAIN_ROWS = 1500
+    model_cache = {}
+    last_train_time = {}
+    
     iteration = 0
     total_predictions = 0
     profitable_predictions = 0
@@ -80,14 +86,30 @@ if __name__ == "__main__":
                 df = add_indicators(df)
                 df = detect_all_patterns(df)
 
-                # Обучить модель один раз на все данные
-                model = train_model(df)
+                # Ограничиваем объем данных для обучения
+                df_train = df.tail(MAX_TRAIN_ROWS)
+
+                # Переобучаем модель не чаще чем раз в N часов
+                now = datetime.now()
+                need_train = (
+                    symbol not in model_cache or
+                    symbol not in last_train_time or
+                    (now - last_train_time[symbol]).total_seconds() >= TRAIN_INTERVAL_HOURS * 3600
+                )
+
+                # Обучить модель только если нужно
+                if need_train:
+                    model = train_model(df_train)
+                    model_cache[symbol] = model
+                    last_train_time[symbol] = now
+                else:
+                    model = model_cache[symbol]
                 
                 # Анализ важности признаков
                 analyze_feature_importance(model, top_n=3)
                 
                 # Оценка модели
-                metrics = evaluate_model(model, df)
+                metrics = evaluate_model(model, df_train)
 
                 # Предсказание с агрессивными DOWN трешолдами и учётом паттернов
                 prediction, confidence, prob_down, prob_up, reliability, pattern_up, pattern_down = predict_next(model, df, up_threshold=0.48, down_threshold=0.35)
