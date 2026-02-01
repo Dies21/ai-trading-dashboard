@@ -676,8 +676,8 @@ elif page == "📉 Логи прогнозів":
             date_range = st.date_input(
                 "Діапазон дат",
                 value=(
-                    pd.to_datetime(df['timestamp']).min().date(),
-                    pd.to_datetime(df['timestamp']).max().date()
+                    pd.to_datetime(df['timestamp'], errors='coerce').min().date(),
+                    pd.to_datetime(df['timestamp'], errors='coerce').max().date()
                 ),
                 key="date_range"
             )
@@ -706,11 +706,21 @@ elif page == "📉 Логи прогнозів":
                 return str(ts)[:16] if len(str(ts)) >= 16 else str(ts)
         
         display_df['timestamp'] = display_df['timestamp'].apply(format_ts)
-        display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
-        display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
-        display_df['p_and_l'] = display_df['p_and_l'].astype(float).apply(lambda x: f"${x:+.2f}")
-        display_df['accuracy'] = display_df['accuracy'].astype(float).apply(lambda x: f"{x:.2%}")
-        display_df['win_rate'] = display_df['win_rate'].astype(float).apply(lambda x: f"{x:.1f}%")
+        display_df['confidence'] = pd.to_numeric(display_df['confidence'], errors='coerce').apply(lambda x: f"{x:.2%}" if pd.notna(x) else 'N/A')
+        display_df['close_price'] = pd.to_numeric(display_df['close_price'], errors='coerce').apply(lambda x: f"${x:.2f}" if pd.notna(x) else 'N/A')
+        display_df['p_and_l'] = pd.to_numeric(display_df['p_and_l'], errors='coerce').apply(lambda x: f"${x:+.2f}" if pd.notna(x) else 'N/A')
+        display_df['accuracy'] = pd.to_numeric(display_df['accuracy'], errors='coerce').apply(lambda x: f"{x:.2%}" if pd.notna(x) else 'N/A')
+        
+        # win_rate може бути у форматі "52.2%" - очищаємо
+        def format_win_rate(x):
+            if pd.isna(x) or x == '':
+                return 'N/A'
+            x_str = str(x).strip().replace('%', '')
+            try:
+                return f"{float(x_str):.1f}%"
+            except:
+                return 'N/A'
+        display_df['win_rate'] = display_df['win_rate'].apply(format_win_rate)
         
         st.dataframe(
             display_df[['timestamp', 'symbol', 'prediction', 'confidence', 'close_price', 'volume', 'p_and_l', 'accuracy']],
