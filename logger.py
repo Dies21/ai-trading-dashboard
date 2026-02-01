@@ -111,12 +111,10 @@ class PredictionLogger:
         # Конвертируем timestamp в datetime
         data['timestamp'] = pd.to_datetime(data['timestamp'], errors='coerce')
         
-        # Фильтруем нерешенные: пустые строки или False
+        # Фильтруем нерешенные: NaN или не True
         pending_mask = (data['symbol'] == symbol) & (
             (data['resolved'].isna()) | 
-            (data['resolved'] == '') | 
-            (data['resolved'] == False) | 
-            (data['resolved'] == 'False')
+            (data['resolved'] != True)
         )
         
         if pending_mask.sum() == 0:
@@ -129,21 +127,22 @@ class PredictionLogger:
         df['time'] = pd.to_datetime(df['time'])
         df = df.sort_values('time').reset_index(drop=True)
         
-        # Создаем индекс округленных времен (убираем секунды)
-        df['time_rounded'] = df['time'].dt.floor('min')  # Округляем до минут
+        # Создаем индекс округленных времен - до ЧАСА, т.к. свечи часовые!
+        df['time_rounded'] = df['time'].dt.floor('h')  # Округляем до часа
         
         resolved_count = 0
+        
         for idx in data[pending_mask].index:
             ts = data.at[idx, 'timestamp']
             if pd.isna(ts):
                 continue
             
-            # Округляем timestamp до минут для сравнения
-            ts_rounded = pd.Timestamp(ts).floor('min')
+            # Округляем timestamp до ЧАСА для сравнения
+            ts_rounded = pd.Timestamp(ts).floor('h')
             
-            # Ищем ближайшую свечу (в пределах ±5 минут)
+            # Ищем ближайшую свечу (в пределах ±2 часов для надежности)
             time_diff = (df['time_rounded'] - ts_rounded).abs()
-            if time_diff.min() > pd.Timedelta(minutes=5):
+            if time_diff.min() > pd.Timedelta(hours=2):
                 continue  # Нет подходящей свечи
             
             i = time_diff.idxmin()
@@ -175,6 +174,7 @@ class PredictionLogger:
             data.loc[idx, 'actual_direction'] = actual_dir
             data.loc[idx, 'is_correct'] = bool(is_correct)
             resolved_count += 1
+            
             
             print(f"    ✓ Разрешен: {prediction} -> {actual_dir} ({price_change_pct:+.2f}%) = {'✅' if is_correct else '❌'}")
 

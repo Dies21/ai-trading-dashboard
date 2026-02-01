@@ -69,6 +69,14 @@ if __name__ == "__main__":
                 print(f"\n📊 Анализирую {symbol}...")
                 print("-" * 70)
                 
+                # ПРОВЕРКА СТАРЫХ ПРОГНОЗОВ (resolve)
+                try:
+                    resolved_count = logger.resolve_predictions(symbol, df, horizon=3)
+                    if resolved_count > 0:
+                        print(f"   ✅ Разрешено {resolved_count} старых прогнозов")
+                except Exception as e:
+                    print(f"   ⚠️ Ошибка при resolve: {e}")
+                
                 df = add_indicators(df)
                 df = detect_all_patterns(df)
 
