@@ -217,15 +217,32 @@ if page == "📊 Огляд":
                 return 'N/A'
             try:
                 from datetime import datetime
-                # Підтримка обох форматів: з пробілом і з T
                 ts_str = str(ts_str).strip()
-                if 'T' in ts_str:
+                
+                # Спроба різних форматів
+                formats = [
+                    '%Y-%m-%dT%H:%M:%S.%f',  # ISO з T
+                    '%Y-%m-%d %H:%M:%S.%f',  # ISO з пробілом
+                    '%Y-%m-%dT%H:%M:%S',     # ISO без мілісекунд
+                    '%Y-%m-%d %H:%M:%S',     # Без мілісекунд
+                ]
+                
+                dt = None
+                for fmt in formats:
+                    try:
+                        dt = datetime.strptime(ts_str, fmt)
+                        break
+                    except:
+                        continue
+                
+                if dt is None:
+                    # Останній шанс - fromisoformat
                     dt = datetime.fromisoformat(ts_str)
-                else:
-                    dt = datetime.strptime(ts_str, '%Y-%m-%d %H:%M:%S.%f')
+                
                 return dt.strftime('%Y-%m-%d %H:%M')
-            except:
-                return 'N/A'
+            except Exception as e:
+                # Повертаємо перші 16 символів якщо є
+                return ts_str[:16] if len(ts_str) >= 16 else ts_str
         
         # Форматування колонок
         latest['Час'] = latest['timestamp'].apply(format_timestamp)
@@ -262,13 +279,28 @@ if page == "📊 Огляд":
                 try:
                     from datetime import datetime
                     ts_str = str(ts_str).strip()
-                    if 'T' in ts_str:
+                    
+                    formats = [
+                        '%Y-%m-%dT%H:%M:%S.%f',
+                        '%Y-%m-%d %H:%M:%S.%f',
+                        '%Y-%m-%dT%H:%M:%S',
+                        '%Y-%m-%d %H:%M:%S',
+                    ]
+                    
+                    dt = None
+                    for fmt in formats:
+                        try:
+                            dt = datetime.strptime(ts_str, fmt)
+                            break
+                        except:
+                            continue
+                    
+                    if dt is None:
                         dt = datetime.fromisoformat(ts_str)
-                    else:
-                        dt = datetime.strptime(ts_str, '%Y-%m-%d %H:%M:%S.%f')
+                    
                     return dt.strftime('%Y-%m-%d %H:%M')
                 except:
-                    return 'N/A'
+                    return ts_str[:16] if len(ts_str) >= 16 else ts_str
             
             down_display['Час'] = down_display['timestamp'].apply(format_timestamp)
             down_display['Актив'] = down_display['symbol']
