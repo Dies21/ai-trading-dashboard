@@ -467,30 +467,32 @@ elif page == "🟢 Прогнози UP":
             st.info("Спробуйте вкладку 🔴 Прогнози DOWN для перевірки")
         else:
             # Метрики
+            # Обчислюємо resolved (вирішені прогнози) і unresolved (очікують)
+            if 'is_correct' in up_df.columns:
+                resolved = up_df[up_df['is_correct'] != '']
+                success = (resolved['is_correct'] == True).sum()
+                fail = (resolved['is_correct'] == False).sum()
+                unresolved = len(up_df) - len(resolved)
+            else:
+                resolved = pd.DataFrame()
+                success = 0
+                fail = 0
+                unresolved = len(up_df)
+            
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Всього UP", len(up_df))
+                if unresolved > 0:
+                    st.caption(f"⏳ Очікується: {unresolved}")
             with col2:
-                if 'is_correct' in up_df.columns:
-                    resolved = up_df[up_df['is_correct'] != '']
-                    success = (resolved['is_correct'] == True).sum()
-                else:
-                    success = 0
                 st.metric("Успішних", success)
             with col3:
-                if 'is_correct' in up_df.columns:
-                    fail = (resolved['is_correct'] == False).sum()
-                    unresolved = len(up_df) - len(resolved)
-                else:
-                    fail = 0
-                    unresolved = len(up_df)
                 st.metric("Невдач", fail)
             with col4:
-                if 'is_correct' in up_df.columns and len(resolved) > 0:
+                if len(resolved) > 0:
                     win_rate = success / len(resolved)
                     st.metric("Win Rate", f"{win_rate:.1%}")
-                    if unresolved > 0:
-                        st.caption(f"⏳ Очікується: {unresolved}")
+                    st.caption(f"З {len(resolved)} вирішених")
                 else:
                     st.metric("Win Rate", "⏳ Очікування")
             
@@ -575,30 +577,32 @@ elif page == "🔴 Прогнози DOWN":
             st.info("Спробуйте вкладку 🟢 Прогнози UP для перевірки")
         else:
             # Метрики
+            # Обчислюємо resolved (вирішені прогнози) і unresolved (очікують)
+            if 'is_correct' in down_df.columns:
+                resolved = down_df[down_df['is_correct'] != '']
+                success = (resolved['is_correct'] == True).sum()
+                fail = (resolved['is_correct'] == False).sum()
+                unresolved = len(down_df) - len(resolved)
+            else:
+                resolved = pd.DataFrame()
+                success = 0
+                fail = 0
+                unresolved = len(down_df)
+            
             col1, col2, col3, col4 = st.columns(4)
             with col1:
                 st.metric("Всього DOWN", len(down_df))
+                if unresolved > 0:
+                    st.caption(f"⏳ Очікується: {unresolved}")
             with col2:
-                if 'is_correct' in down_df.columns:
-                    resolved = down_df[down_df['is_correct'] != '']
-                    success = (resolved['is_correct'] == True).sum()
-                else:
-                    success = 0
                 st.metric("Успішних", success)
             with col3:
-                if 'is_correct' in down_df.columns:
-                    fail = (resolved['is_correct'] == False).sum()
-                    unresolved = len(down_df) - len(resolved)
-                else:
-                    fail = 0
-                    unresolved = len(down_df)
                 st.metric("Невдач", fail)
             with col4:
-                if 'is_correct' in down_df.columns and len(resolved) > 0:
+                if len(resolved) > 0:
                     win_rate = success / len(resolved)
                     st.metric("Win Rate", f"{win_rate:.1%}")
-                    if unresolved > 0:
-                        st.caption(f"⏳ Очікується: {unresolved}")
+                    st.caption(f"З {len(resolved)} вирішених")
                 else:
                     st.metric("Win Rate", "⏳ Очікування")
             
