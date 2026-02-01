@@ -325,7 +325,7 @@ if page == "📊 Огляд":
             up_df = df[df['prediction'] == 'UP'].copy()
             if len(up_df) > 0 and 'is_correct' in up_df.columns:
                 # Використовуємо is_correct замість accuracy
-                resolved = up_df[up_df['is_correct'] != ''].copy()
+                resolved = up_df[up_df['is_correct'].notna() & (up_df['is_correct'] != '')].copy()
                 if len(resolved) > 0:
                     success_up = (resolved['is_correct'] == True).sum()
                     fail_up = (resolved['is_correct'] == False).sum()
@@ -358,7 +358,7 @@ if page == "📊 Огляд":
             down_df = df[df['prediction'] == 'DOWN'].copy()
             if len(down_df) > 0 and 'is_correct' in down_df.columns:
                 # Використовуємо is_correct замість accuracy
-                resolved = down_df[down_df['is_correct'] != ''].copy()
+                resolved = down_df[down_df['is_correct'].notna() & (down_df['is_correct'] != '')].copy()
                 if len(resolved) > 0:
                     success_down = (resolved['is_correct'] == True).sum()
                     fail_down = (resolved['is_correct'] == False).sum()
@@ -417,7 +417,7 @@ if page == "📊 Огляд":
                 st.metric(f"{symbol} - Впевненість", f"{avg_conf:.2%}")
             with col3:
                 if 'is_correct' in symbol_df.columns:
-                    resolved = symbol_df[symbol_df['is_correct'] != '']
+                    resolved = symbol_df[symbol_df['is_correct'].notna() & (symbol_df['is_correct'] != '')]
                     if len(resolved) > 0:
                         correct = (resolved['is_correct'] == True).sum()
                         total = len(resolved)
@@ -473,7 +473,7 @@ elif page == "🟢 Прогнози UP":
             # Метрики
             # Обчислюємо resolved (вирішені прогнози) і unresolved (очікують)
             if 'is_correct' in up_df.columns:
-                resolved = up_df[up_df['is_correct'] != '']
+                resolved = up_df[up_df['is_correct'].notna() & (up_df['is_correct'] != '')]
                 success = (resolved['is_correct'] == True).sum()
                 fail = (resolved['is_correct'] == False).sum()
                 unresolved = len(up_df) - len(resolved)
@@ -583,7 +583,7 @@ elif page == "🔴 Прогнози DOWN":
             # Метрики
             # Обчислюємо resolved (вирішені прогнози) і unresolved (очікують)
             if 'is_correct' in down_df.columns:
-                resolved = down_df[down_df['is_correct'] != '']
+                resolved = down_df[down_df['is_correct'].notna() & (down_df['is_correct'] != '')]
                 success = (resolved['is_correct'] == True).sum()
                 fail = (resolved['is_correct'] == False).sum()
                 unresolved = len(down_df) - len(resolved)
