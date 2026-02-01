@@ -118,11 +118,12 @@ def load_predictions():
     df = pd.read_csv(log_file)
 
     # Безопасное приведение типов и очистка полей
-    if 'timestamp' in df.columns:
-        try:
-            df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
-        except Exception:
-            df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+    # НЕ конвертуємо timestamp тут, залишаємо як рядок
+    # if 'timestamp' in df.columns:
+    #     try:
+    #         df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
+    #     except Exception:
+    #         df['timestamp'] = pd.to_datetime(df['timestamp'], errors='coerce')
 
     numeric_cols = ['confidence', 'accuracy', 'close_price', 'volume', 'p_and_l', 'balance_simulated']
     for col in numeric_cols:
@@ -207,17 +208,46 @@ if page == "📊 Огляд":
         
         # Останні 10 прогнозів
         st.subheader("🔔 Останні прогнози")
-        latest = df.tail(10)[['timestamp', 'symbol', 'prediction', 'confidence', 'close_price', 'accuracy']].copy()
-        latest['confidence'] = latest['confidence'].astype(float)
-        latest['accuracy'] = latest['accuracy'].astype(float)
         
-        # Форматування з цветовыми індикаторами
-        latest['Час'] = pd.to_datetime(latest['timestamp']).dt.strftime('%Y-%m-%d %H:%M')
-        latest['Актив'] = latest['symbol']
-        latest['Прогноз'] = latest['prediction'].apply(lambda x: '🟢 UP' if x == 'UP' else '🔴 DOWN' if x == 'DOWN' else '⚪ UNSURE')
-        latest['Впевненість'] = latest['confidence'].apply(lambda x: f"{x:.2%}")
-        latest['Ціна'] = latest['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
-        latest['Точність'] = latest['accuracy'].astype(float).apply(lambda x: f"{x:.2%}")
+        latest = df.tail(10).copy()
+        
+        # Форматування timestamp через Python datetime для надійності
+        def format_timestamp(ts_str):
+            if pd.isna(ts_str) or ts_str == '' or ts_str is None:
+                return 'N/A'
+            try:
+                from datetime import datetime
+                # Підтримка обох форматів: з пробілом і з T
+                ts_str = str(ts_str).strip()
+                if 'T' in ts_str:
+                    dt = datetime.fromisoformat(ts_str)
+                else:
+                    dt = datetime.strptime(ts_str, '%Y-%m-%d %H:%M:%S.%f')
+                return dt.strftime('%Y-%m-%d %H:%M')
+            except:
+                return 'N/A'
+        
+        # Форматування колонок
+        latest['Час'] = latest['timestamp'].apply(format_timestamp)
+        latest['Актив'] = latest['symbol'].astype(str)
+        latest['Прогноз'] = latest['prediction'].apply(lambda x: '🟢 UP' if str(x).strip() == 'UP' else '🔴 DOWN' if str(x).strip() == 'DOWN' else '⚪ UNSURE')
+        latest['Впевненість'] = pd.to_numeric(latest['confidence'], errors='coerce').fillna(0).apply(lambda x: f"{x:.2%}")
+        latest['Ціна'] = pd.to_numeric(latest['close_price'], errors='coerce').fillna(0).apply(lambda x: f"${x:.2f}")
+        
+        # Використовуємо is_correct для точності
+        if 'is_correct' in latest.columns:
+            latest['Точність'] = latest['is_correct'].apply(
+                lambda x: '✅' if x == True or str(x).strip().lower() == 'true' else '❌' if x == False or str(x).strip().lower() == 'false' else '⏳'
+            )
+        else:
+            latest['Точність'] = '⏳'
+        
+        # ДІАГНОСТИКА
+        st.write("**DEBUG: Колонки після форматування:**", list(latest.columns))
+        st.write("**DEBUG: Перший рядок Час:**", latest['Час'].iloc[0] if len(latest) > 0 else "Empty")
+        st.write("**DEBUG: Перший рядок Точність:**", latest['Точність'].iloc[0] if len(latest) > 0 else "Empty")
+        st.write("**DEBUG: Показуємо всі колонки:**")
+        st.write(latest[['Час', 'Актив', 'Прогноз', 'Впевненість', 'Ціна', 'Точність']].head(2))
         
         st.dataframe(
             latest[['Час', 'Актив', 'Прогноз', 'Впевненість', 'Ціна', 'Точність']],
@@ -230,11 +260,27 @@ if page == "📊 Огляд":
         if len(down_signals) > 0:
             st.markdown("---")
             st.subheader("🔴 Останні сигнали на ПАДІННЯ")
-            down_display = down_signals[['timestamp', 'symbol', 'confidence', 'close_price']].copy()
-            down_display['Час'] = pd.to_datetime(down_display['timestamp']).dt.strftime('%Y-%m-%d %H:%M')
+            down_display = down_signals.copy()
+            
+            # Використовуємо ту саму функцію format_timestamp
+            def format_timestamp(ts_str):
+                if pd.isna(ts_str) or ts_str == '' or ts_str is None:
+                    return 'N/A'
+                try:
+                    from datetime import datetime
+                    ts_str = str(ts_str).strip()
+                    if 'T' in ts_str:
+                        dt = datetime.fromisoformat(ts_str)
+                    else:
+                        dt = datetime.strptime(ts_str, '%Y-%m-%d %H:%M:%S.%f')
+                    return dt.strftime('%Y-%m-%d %H:%M')
+                except:
+                    return 'N/A'
+            
+            down_display['Час'] = down_display['timestamp'].apply(format_timestamp)
             down_display['Актив'] = down_display['symbol']
-            down_display['Впевненість'] = down_display['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
-            down_display['Ціна'] = down_display['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
+            down_display['Впевненість'] = pd.to_numeric(down_display['confidence'], errors='coerce').fillna(0).apply(lambda x: f"{x:.2%}")
+            down_display['Ціна'] = pd.to_numeric(down_display['close_price'], errors='coerce').fillna(0).apply(lambda x: f"${x:.2f}")
             
             st.dataframe(
                 down_display[['Час', 'Актив', 'Впевненість', 'Ціна']],
@@ -250,86 +296,82 @@ if page == "📊 Огляд":
         with col1:
             st.subheader("🟢 Точність прогнозів на ЗРОСТАННЯ")
             up_df = df[df['prediction'] == 'UP'].copy()
-            if len(up_df) > 0:
-                up_df['accuracy_float'] = up_df['accuracy'].astype(float)
-                success_up = (up_df['accuracy_float'] > 0.5).sum()
-                fail_up = (up_df['accuracy_float'] <= 0.5).sum()
-                
-                if success_up + fail_up > 0:
-                    fig = px.pie(
-                        values=[success_up, fail_up],
-                        names=['Успіх', 'Невдача'],
-                        color_discrete_map={'Успіх': '#00cc00', 'Невдача': '#ff6b6b'},
-                        hole=0.3
-                    )
-                    fig.update_traces(
-                        hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
-                    )
-                    st.plotly_chart(fig, width='stretch')
-                    st.metric(f"Успішних: {success_up} / {success_up + fail_up}", f"{success_up/(success_up + fail_up):.1%}" if success_up + fail_up > 0 else "N/A")
+            if len(up_df) > 0 and 'is_correct' in up_df.columns:
+                # Використовуємо is_correct замість accuracy
+                resolved = up_df[up_df['is_correct'] != ''].copy()
+                if len(resolved) > 0:
+                    success_up = (resolved['is_correct'] == True).sum()
+                    fail_up = (resolved['is_correct'] == False).sum()
+                    unresolved = len(up_df) - len(resolved)
+                    
+                    if success_up + fail_up > 0:
+                        fig = px.pie(
+                            values=[success_up, fail_up],
+                            names=['Успіх', 'Невдача'],
+                            color_discrete_map={'Успіх': '#00cc00', 'Невдача': '#ff6b6b'},
+                            hole=0.3
+                        )
+                        fig.update_traces(
+                            hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
+                        )
+                        st.plotly_chart(fig, width='stretch')
+                        st.metric(f"Успішних: {success_up} / {success_up + fail_up}", f"{success_up/(success_up + fail_up):.1%}" if success_up + fail_up > 0 else "N/A")
+                        if unresolved > 0:
+                            st.caption(f"⏳ Не розв'язано: {unresolved}")
+                    else:
+                        st.info(f"⏳ Очікування розв'язання ({len(up_df)} прогнозів)")
+                else:
+                    st.info(f"⏳ Очікування розв'язання ({len(up_df)} прогнозів)")
             else:
                 st.info("🔵 Немає прогнозів на зростання")
         
         with col2:
             st.subheader("🔴 Точність прогнозів на ПАДІННЯ")
             down_df = df[df['prediction'] == 'DOWN'].copy()
-            if len(down_df) > 0:
-                down_df['accuracy_float'] = down_df['accuracy'].astype(float)
-                success_down = (down_df['accuracy_float'] > 0.5).sum()
-                fail_down = (down_df['accuracy_float'] <= 0.5).sum()
-                
-                if success_down + fail_down > 0:
-                    fig = px.pie(
-                        values=[success_down, fail_down],
-                        names=['Успіх', 'Невдача'],
-                        color_discrete_map={'Успіх': '#ff0000', 'Невдача': '#ff6b6b'},
-                        hole=0.3
-                    )
-                    fig.update_traces(
-                        hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
-                    )
-                    st.plotly_chart(fig, width='stretch')
-                    st.metric(f"Успішних: {success_down} / {success_down + fail_down}", f"{success_down/(success_down + fail_down):.1%}" if success_down + fail_down > 0 else "N/A")
+            if len(down_df) > 0 and 'is_correct' in down_df.columns:
+                # Використовуємо is_correct замість accuracy
+                resolved = down_df[down_df['is_correct'] != ''].copy()
+                if len(resolved) > 0:
+                    success_down = (resolved['is_correct'] == True).sum()
+                    fail_down = (resolved['is_correct'] == False).sum()
+                    unresolved = len(down_df) - len(resolved)
+                    
+                    if success_down + fail_down > 0:
+                        fig = px.pie(
+                            values=[success_down, fail_down],
+                            names=['Успіх', 'Невдача'],
+                            color_discrete_map={'Успіх': '#ff0000', 'Невдача': '#ff6b6b'},
+                            hole=0.3
+                        )
+                        fig.update_traces(
+                            hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
+                        )
+                        st.plotly_chart(fig, width='stretch')
+                        st.metric(f"Успішних: {success_down} / {success_down + fail_down}", f"{success_down/(success_down + fail_down):.1%}" if success_down + fail_down > 0 else "N/A")
+                        if unresolved > 0:
+                            st.caption(f"⏳ Не розв'язано: {unresolved}")
+                    else:
+                        st.info(f"⏳ Очікування розв'язання ({len(down_df)} прогнозів)")
+                else:
+                    st.info(f"⏳ Очікування розв'язання ({len(down_df)} прогнозів)")
             else:
                 st.info("🔴 Немає прогнозів на падіння")
         
         st.markdown("---")
         
-        # Графики
-        
-        with col1:
-            st.subheader("📊 Розподіл прогнозів")
-            prediction_counts = df['prediction'].value_counts()
-            fig = px.pie(
-                values=prediction_counts.values,
-                names=prediction_counts.index,
-                color_discrete_map={'UP': '#00cc00', 'DOWN': '#ff0000', 'UNSURE': '#ffa500'},
-                hole=0.3
-            )
-            fig.update_traces(
-                hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
-            )
-            st.plotly_chart(fig, width='stretch')
-        
-        with col2:
-            st.subheader("📈 Точність у часі")
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            df['accuracy_float'] = df['accuracy'].astype(float)
-            
-            fig = px.line(
-                df,
-                x='timestamp',
-                y='accuracy_float',
-                title='Зміна точності',
-                color='symbol',
-                markers=True,
-                labels={'timestamp': 'Час', 'accuracy_float': 'Точність', 'symbol': 'Актив'}
-            )
-            fig.update_traces(
-                hovertemplate='<b>%{fullData.name}</b><br>Час: %{x|%Y-%m-%d %H:%M}<br>Точність: %{y:.2%}<extra></extra>'
-            )
-            fig.update_layout(hovermode='x unified')
-            st.plotly_chart(fig, width='stretch')
+        # Графік розподілу прогнозів
+        st.subheader("📊 Розподіл прогнозів")
+        prediction_counts = df['prediction'].value_counts()
+        fig = px.pie(
+            values=prediction_counts.values,
+            names=prediction_counts.index,
+            color_discrete_map={'UP': '#00cc00', 'DOWN': '#ff0000', 'UNSURE': '#ffa500'},
+            hole=0.3
+        )
+        fig.update_traces(
+            hovertemplate='<b>%{label}</b><br>Кількість: %{value}<br>Частка: %{percent}<extra></extra>'
+        )
+        st.plotly_chart(fig, width='stretch')
         
         st.markdown("---")
         
@@ -345,8 +387,16 @@ if page == "📊 Огляд":
                 avg_conf = symbol_df['confidence'].astype(float).mean()
                 st.metric(f"{symbol} - Впевненість", f"{avg_conf:.2%}")
             with col3:
-                avg_acc = symbol_df['accuracy'].astype(float).mean()
-                st.metric(f"{symbol} - Точність", f"{avg_acc:.2%}")
+                if 'is_correct' in symbol_df.columns:
+                    resolved = symbol_df[symbol_df['is_correct'] != '']
+                    if len(resolved) > 0:
+                        correct = (resolved['is_correct'] == True).sum()
+                        total = len(resolved)
+                        st.metric(f"{symbol} - Точність", f"{correct}/{total} ({correct/total:.1%})")
+                    else:
+                        st.metric(f"{symbol} - Точність", "⏳")
+                else:
+                    st.metric(f"{symbol} - Точність", "N/A")
 
 # ==================== СТОРІНКА 1.5: ПРОГНОЗЫ UP ====================
 elif page == "🟢 Прогнози UP":
@@ -396,15 +446,28 @@ elif page == "🟢 Прогнози UP":
             with col1:
                 st.metric("Всього UP", len(up_df))
             with col2:
-                up_df['accuracy_float'] = up_df['accuracy'].astype(float)
-                success = (up_df['accuracy_float'] > 0.5).sum()
+                if 'is_correct' in up_df.columns:
+                    resolved = up_df[up_df['is_correct'] != '']
+                    success = (resolved['is_correct'] == True).sum()
+                else:
+                    success = 0
                 st.metric("Успішних", success)
             with col3:
-                fail = (up_df['accuracy_float'] <= 0.5).sum()
+                if 'is_correct' in up_df.columns:
+                    fail = (resolved['is_correct'] == False).sum()
+                    unresolved = len(up_df) - len(resolved)
+                else:
+                    fail = 0
+                    unresolved = len(up_df)
                 st.metric("Невдач", fail)
             with col4:
-                win_rate = success / len(up_df) if len(up_df) > 0 else 0
-                st.metric("Win Rate", f"{win_rate:.1%}")
+                if 'is_correct' in up_df.columns and len(resolved) > 0:
+                    win_rate = success / len(resolved)
+                    st.metric("Win Rate", f"{win_rate:.1%}")
+                    if unresolved > 0:
+                        st.caption(f"⏳ Очікується: {unresolved}")
+                else:
+                    st.metric("Win Rate", "⏳ Очікування")
             
             st.markdown("---")
             
@@ -469,15 +532,28 @@ elif page == "🔴 Прогнози DOWN":
             with col1:
                 st.metric("Всього DOWN", len(down_df))
             with col2:
-                down_df['accuracy_float'] = down_df['accuracy'].astype(float)
-                success = (down_df['accuracy_float'] > 0.5).sum()
+                if 'is_correct' in down_df.columns:
+                    resolved = down_df[down_df['is_correct'] != '']
+                    success = (resolved['is_correct'] == True).sum()
+                else:
+                    success = 0
                 st.metric("Успішних", success)
             with col3:
-                fail = (down_df['accuracy_float'] <= 0.5).sum()
+                if 'is_correct' in down_df.columns:
+                    fail = (resolved['is_correct'] == False).sum()
+                    unresolved = len(down_df) - len(resolved)
+                else:
+                    fail = 0
+                    unresolved = len(down_df)
                 st.metric("Невдач", fail)
             with col4:
-                win_rate = success / len(down_df) if len(down_df) > 0 else 0
-                st.metric("Win Rate", f"{win_rate:.1%}")
+                if 'is_correct' in down_df.columns and len(resolved) > 0:
+                    win_rate = success / len(resolved)
+                    st.metric("Win Rate", f"{win_rate:.1%}")
+                    if unresolved > 0:
+                        st.caption(f"⏳ Очікується: {unresolved}")
+                else:
+                    st.metric("Win Rate", "⏳ Очікування")
             
             st.markdown("---")
             
@@ -486,10 +562,16 @@ elif page == "🔴 Прогнози DOWN":
             display_df['timestamp'] = pd.to_datetime(display_df['timestamp']).dt.strftime('%Y-%m-%d %H:%M:%S')
             display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
             display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
-            display_df['accuracy'] = display_df['accuracy'].astype(float).apply(lambda x: f"{x:.2%}")
+            
+            cols_to_show = ['timestamp', 'symbol', 'confidence', 'close_price']
+            if 'is_correct' in display_df.columns:
+                display_df['Результат'] = display_df['is_correct'].apply(
+                    lambda x: '✅' if x == True else '❌' if x == False else '⏳'
+                )
+                cols_to_show.append('Результат')
             
             st.dataframe(
-                display_df[['timestamp', 'symbol', 'confidence', 'close_price', 'accuracy']],
+                display_df[cols_to_show],
                 width='stretch',
                 hide_index=True
             )
