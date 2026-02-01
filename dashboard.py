@@ -33,6 +33,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Версія: 1.0.1 (форсоване оновлення)
+
 # Стили
 st.markdown("""
 <style>
