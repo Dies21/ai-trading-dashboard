@@ -58,7 +58,7 @@ class PredictionLogger:
             return
     
     def log_prediction(self, symbol, prediction, confidence, close_price, volume, 
-                      balance_simulated, p_and_l, accuracy, win_rate, horizon=1):
+                      balance_simulated, p_and_l, accuracy, win_rate, horizon=1, timestamp=None):
         """Логировать одно предсказание.
         
         Аргументы:
@@ -72,8 +72,9 @@ class PredictionLogger:
             accuracy: точность на тестовой выборке
             win_rate: процент прибыльных сделок
         """
+        ts = timestamp if timestamp is not None else datetime.now().isoformat()
         log_data = {
-            'timestamp': datetime.now().isoformat(),
+            'timestamp': ts,
             'symbol': symbol,
             'prediction': prediction,
             'confidence': f"{confidence:.4f}",

@@ -120,6 +120,7 @@ if __name__ == "__main__":
                 # Данные для логирования
                 close_price = df["close"].iloc[-1]
                 volume = df["volume"].iloc[-1]
+                candle_time = df["time"].iloc[-1] if "time" in df.columns else None
                 
                 # Получить метрики из evaluate_model (это словарь)
                 accuracy = metrics.get("accuracy", 0)
@@ -138,7 +139,8 @@ if __name__ == "__main__":
                     balance_simulated=1000 + balance_change,
                     p_and_l=balance_change,
                     accuracy=accuracy,
-                    win_rate=win_rate
+                    win_rate=win_rate,
+                    timestamp=candle_time
                 )
                 
                 print(f"\n💾 Данные логированы:")
