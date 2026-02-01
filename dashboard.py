@@ -522,6 +522,18 @@ elif page == "🟢 Прогнози UP":
             display_df['timestamp'] = display_df['timestamp'].apply(format_ts)
             display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
             display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
+            if 'exit_price' in display_df.columns:
+                display_df['exit_price'] = pd.to_numeric(display_df['exit_price'], errors='coerce').apply(
+                    lambda x: f"${x:.2f}" if pd.notna(x) else ""
+                )
+            if 'price_change_pct' in display_df.columns:
+                display_df['price_change_pct'] = pd.to_numeric(display_df['price_change_pct'], errors='coerce').apply(
+                    lambda x: f"{x:+.2f}%" if pd.notna(x) else ""
+                )
+            if 'price_change_abs' in display_df.columns:
+                display_df['price_change_abs'] = pd.to_numeric(display_df['price_change_abs'], errors='coerce').apply(
+                    lambda x: f"${x:+.2f}" if pd.notna(x) else ""
+                )
             
             # Додаємо колонку Результат з іконками
             if 'is_correct' in display_df.columns:
@@ -531,8 +543,28 @@ elif page == "🟢 Прогнози UP":
             else:
                 display_df['Результат'] = '⏳'
             
+            display_df['Время'] = display_df['timestamp']
+            display_df['Актив'] = display_df['symbol']
+            display_df['Уверенность'] = display_df['confidence']
+            display_df['Цена входа'] = display_df['close_price']
+            if 'exit_price' in display_df.columns:
+                display_df['Цена выхода'] = display_df['exit_price']
+            if 'price_change_abs' in display_df.columns:
+                display_df['Изменение, $'] = display_df['price_change_abs']
+            if 'price_change_pct' in display_df.columns:
+                display_df['Изменение, %'] = display_df['price_change_pct']
+
+            cols_to_show = ['Время', 'Актив', 'Уверенность', 'Цена входа']
+            if 'Цена выхода' in display_df.columns:
+                cols_to_show.append('Цена выхода')
+            if 'Изменение, $' in display_df.columns:
+                cols_to_show.append('Изменение, $')
+            if 'Изменение, %' in display_df.columns:
+                cols_to_show.append('Изменение, %')
+            cols_to_show.append('Результат')
+
             st.dataframe(
-                display_df[['timestamp', 'symbol', 'confidence', 'close_price', 'Результат']],
+                display_df[cols_to_show],
                 width='stretch',
                 hide_index=True
             )
@@ -632,8 +664,37 @@ elif page == "🔴 Прогнози DOWN":
             display_df['timestamp'] = display_df['timestamp'].apply(format_ts)
             display_df['confidence'] = display_df['confidence'].astype(float).apply(lambda x: f"{x:.2%}")
             display_df['close_price'] = display_df['close_price'].astype(float).apply(lambda x: f"${x:.2f}")
+            if 'exit_price' in display_df.columns:
+                display_df['exit_price'] = pd.to_numeric(display_df['exit_price'], errors='coerce').apply(
+                    lambda x: f"${x:.2f}" if pd.notna(x) else ""
+                )
+            if 'price_change_pct' in display_df.columns:
+                display_df['price_change_pct'] = pd.to_numeric(display_df['price_change_pct'], errors='coerce').apply(
+                    lambda x: f"{x:+.2f}%" if pd.notna(x) else ""
+                )
+            if 'price_change_abs' in display_df.columns:
+                display_df['price_change_abs'] = pd.to_numeric(display_df['price_change_abs'], errors='coerce').apply(
+                    lambda x: f"${x:+.2f}" if pd.notna(x) else ""
+                )
             
-            cols_to_show = ['timestamp', 'symbol', 'confidence', 'close_price']
+            display_df['Время'] = display_df['timestamp']
+            display_df['Актив'] = display_df['symbol']
+            display_df['Уверенность'] = display_df['confidence']
+            display_df['Цена входа'] = display_df['close_price']
+            if 'exit_price' in display_df.columns:
+                display_df['Цена выхода'] = display_df['exit_price']
+            if 'price_change_abs' in display_df.columns:
+                display_df['Изменение, $'] = display_df['price_change_abs']
+            if 'price_change_pct' in display_df.columns:
+                display_df['Изменение, %'] = display_df['price_change_pct']
+
+            cols_to_show = ['Время', 'Актив', 'Уверенность', 'Цена входа']
+            if 'Цена выхода' in display_df.columns:
+                cols_to_show.append('Цена выхода')
+            if 'Изменение, $' in display_df.columns:
+                cols_to_show.append('Изменение, $')
+            if 'Изменение, %' in display_df.columns:
+                cols_to_show.append('Изменение, %')
             if 'is_correct' in display_df.columns:
                 display_df['Результат'] = display_df['is_correct'].apply(
                     lambda x: '✅' if x == True else '❌' if x == False else '⏳'

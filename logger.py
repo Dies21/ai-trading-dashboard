@@ -28,6 +28,9 @@ class PredictionLogger:
             'prediction',
             'confidence',
             'close_price',
+            'exit_price',
+            'price_change_pct',
+            'price_change_abs',
             'volume',
             'balance_simulated',
             'p_and_l',
@@ -112,10 +115,22 @@ class PredictionLogger:
         # Конвертируем timestamp в datetime
         data['timestamp'] = pd.to_datetime(data['timestamp'], errors='coerce')
         
-        # Фильтруем нерешенные: NaN или не True
+        # Убедимся, что новые колонки есть
+        for col in ['exit_price', 'price_change_pct', 'price_change_abs']:
+            if col not in data.columns:
+                data[col] = ""
+
+        # Фильтруем нерешенные или без расчета изменения
+        missing_change = (
+            data['exit_price'].isna() | (data['exit_price'] == '') |
+            data['price_change_pct'].isna() | (data['price_change_pct'] == '') |
+            data['price_change_abs'].isna() | (data['price_change_abs'] == '')
+        )
+
         pending_mask = (data['symbol'] == symbol) & (
-            (data['resolved'].isna()) | 
-            (data['resolved'] != True)
+            (data['resolved'].isna()) |
+            (data['resolved'].astype(str).str.strip() != 'True') |
+            (missing_change)
         )
         
         if pending_mask.sum() == 0:
@@ -174,6 +189,9 @@ class PredictionLogger:
             data.loc[idx, 'resolved'] = True
             data.loc[idx, 'actual_direction'] = actual_dir
             data.loc[idx, 'is_correct'] = bool(is_correct)
+            data.loc[idx, 'exit_price'] = exit_price
+            data.loc[idx, 'price_change_pct'] = price_change_pct
+            data.loc[idx, 'price_change_abs'] = exit_price - entry
             resolved_count += 1
             
             
