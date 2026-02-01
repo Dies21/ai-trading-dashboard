@@ -152,6 +152,10 @@ class PredictionLogger:
             ts = data.at[idx, 'timestamp']
             if pd.isna(ts):
                 continue
+            try:
+                row_horizon = int(float(data.at[idx, 'horizon'])) if str(data.at[idx, 'horizon']).strip() != '' else horizon
+            except Exception:
+                row_horizon = horizon
             
             # Округляем timestamp до ЧАСА для сравнения
             ts_rounded = pd.Timestamp(ts).floor('h')
@@ -164,11 +168,11 @@ class PredictionLogger:
             i = time_diff.idxmin()
             
             # Проверяем, есть ли horizon свечей вперед
-            if i + horizon >= len(df):
+            if i + row_horizon >= len(df):
                 continue
             
             entry = float(data.at[idx, 'close_price'])
-            exit_price = float(df.iloc[i + horizon]['close'])
+            exit_price = float(df.iloc[i + row_horizon]['close'])
             
             # Определяем фактическое направление
             price_change_pct = ((exit_price - entry) / entry) * 100
