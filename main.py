@@ -12,15 +12,32 @@ def auto_push_logs():
     """Автоматически отправляет обновленные логи в GitHub"""
     try:
         print("\n📤 Отправка данных на сайт...")
-        subprocess.run(["git", "add", "-f", "logs/predictions.csv"], check=False, capture_output=True)
-        commit_msg = f"auto-update: predictions {datetime.now().strftime('%Y-%m-%d %H:%M')}"
-        result = subprocess.run(["git", "commit", "-m", commit_msg], check=False, capture_output=True, text=True)
         
-        if "nothing to commit" not in result.stdout:
-            subprocess.run(["git", "push", "origin", "main"], check=False, capture_output=True)
-            print("✅ Данные успешно отправлены на сайт")
+        # Добавляем файл логов
+        add_result = subprocess.run(["git", "add", "-f", "logs/predictions.csv"], 
+                                   capture_output=True, text=True)
+        
+        commit_msg = f"auto-update: predictions {datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        commit_result = subprocess.run(["git", "commit", "-m", commit_msg], 
+                                      capture_output=True, text=True)
+        
+        # Проверяем, был ли коммит
+        if "nothing to commit" not in commit_result.stdout and "nothing to commit" not in commit_result.stderr:
+            # Пушим с retry
+            push_result = subprocess.run(["git", "push", "origin", "main", "--force-with-lease"], 
+                                        capture_output=True, text=True, timeout=30)
+            if push_result.returncode == 0:
+                print("✅ Данные успешно отправлены на сайт")
+            else:
+                print(f"⚠️ Ошибка при пуше: {push_result.stderr}")
+                # Пробуем обычный пуш без флагов
+                push_result2 = subprocess.run(["git", "push"], 
+                                             capture_output=True, text=True, timeout=30)
         else:
             print("ℹ️ Нет новых данных для отправки")
+            
+    except subprocess.TimeoutExpired:
+        print("⚠️ Таймаут при отправке данных")
     except Exception as e:
         print(f"⚠️ Не удалось отправить данные: {e}")
 
@@ -80,8 +97,12 @@ if __name__ == "__main__":
                     resolved_count = logger.resolve_predictions(symbol, df, horizon=1)
                     if resolved_count > 0:
                         print(f"   ✅ Разрешено {resolved_count} старых прогнозов")
+                    else:
+                        print(f"   ℹ️ Нет прогнозов для разрешения")
                 except Exception as e:
                     print(f"   ⚠️ Ошибка при resolve: {e}")
+                    import traceback
+                    traceback.print_exc()
                 
                 df = add_indicators(df)
                 df = detect_all_patterns(df)

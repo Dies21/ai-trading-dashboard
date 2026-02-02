@@ -133,11 +133,16 @@ class PredictionLogger:
             (missing_change)
         )
         
-        if pending_mask.sum() == 0:
+        pending_count = pending_mask.sum()
+        if pending_count == 0:
             return 0
+        
+        print(f"    📋 Нерешённых прогнозов для {symbol}: {pending_count}")
 
         df = df.copy()
         if 'time' not in df.columns:
+            print(f"    ❌ Нет колонки 'time' в данных!")
+            print(f"    Доступные колонки: {df.columns.tolist()}")
             return 0
         
         df['time'] = pd.to_datetime(df['time'])
@@ -211,6 +216,18 @@ class PredictionLogger:
         if resolved_count > 0:
             data.to_csv(self.csv_log, index=False)
             print(f"  📊 Разрешено {resolved_count} прогнозов для {symbol}")
+            
+            # Отправляем обновленный файл сразу же
+            import subprocess
+            try:
+                subprocess.run(["git", "add", "-f", str(self.csv_log)], 
+                              capture_output=True, timeout=10)
+                subprocess.run(["git", "commit", "-m", f"resolve: {resolved_count} predictions for {symbol}"], 
+                              capture_output=True, timeout=10)
+                subprocess.run(["git", "push", "origin", "main", "--force-with-lease"], 
+                              capture_output=True, timeout=30)
+            except Exception as e:
+                print(f"    ⚠️ Не удалось отправить resolve на сайт: {e}")
 
         return resolved_count
     
