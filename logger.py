@@ -168,11 +168,18 @@ class PredictionLogger:
             i = time_diff.idxmin()
             
             # Проверяем, есть ли horizon свечей вперед
+            # Если нет, используем последнюю доступную свечу (особенно если это текущая)
             if i + row_horizon >= len(df):
-                continue
+                if i == len(df) - 1:  # Это последняя свеча
+                    # Берем последнюю доступную свечу для разрешения
+                    i_target = i
+                else:
+                    continue
+            else:
+                i_target = i + row_horizon
             
             entry = float(data.at[idx, 'close_price'])
-            exit_price = float(df.iloc[i + row_horizon]['close'])
+            exit_price = float(df.iloc[i_target]['close'])
             
             # Определяем фактическое направление
             price_change_pct = ((exit_price - entry) / entry) * 100
