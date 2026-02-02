@@ -197,10 +197,20 @@ class PredictionLogger:
                 i_target = i + row_horizon
             
             entry = float(data.at[idx, 'close_price'])
+            
+            # Защита от деления на ноль (для очень дешёвых токенов типа PEPE)
+            if entry == 0 or pd.isna(entry):
+                print(f"    ⚠️ Пропуск: entry цена = {entry} для {symbol}")
+                continue
+            
             exit_price = float(df.iloc[i_target]['close'])
             
             # Определяем фактическое направление
-            price_change_pct = ((exit_price - entry) / entry) * 100
+            try:
+                price_change_pct = ((exit_price - entry) / entry) * 100
+            except Exception as e:
+                print(f"    ⚠️ Ошибка при расчёте: entry={entry}, exit={exit_price}, error={e}")
+                continue
             
             # Используем небольшой порог (0.05%) чтобы избежать шума
             if price_change_pct > 0.05:
@@ -223,11 +233,13 @@ class PredictionLogger:
             data.loc[idx, 'price_change_abs'] = exit_price - entry
             resolved_count += 1
             
-            
-            print(f"    ✓ Разрешен: {prediction} -> {actual_dir} ({price_change_pct:+.2f}%) = {'✅' if is_correct else '❌'}")
+            print(f"    ✓ Разрешен #{idx}: {prediction} -> {actual_dir} ({price_change_pct:+.2f}%) = {'✅' if is_correct else '❌'}")
 
+        print(f"    📊 Итого разрешено в цикле: {resolved_count}")
+        
         if resolved_count > 0:
             data.to_csv(self.csv_log, index=False)
+            print(f"    💾 CSV обновлён, сохранено {resolved_count} строк")
             print(f"  📊 Разрешено {resolved_count} прогнозов для {symbol}")
             
             # Отправляем обновленный файл сразу же

@@ -10,10 +10,11 @@ FEATURES = ["close", "volume", "rsi", "ema_20", "ema_50", "macd", "atr", "bb_pos
 
 
 def calculate_simulated_pnl(y_true, y_pred, price_changes, starting_balance=1000):
-    """Симуляция торговли по сигналам модели."""
+    """Симуляция торговли по сигналам модели с штрафом за бездействие."""
     balance = starting_balance
     trades = 0
     wins = 0
+    inaction_count = 0
     
     y_true = np.array(y_true)
     y_pred = np.array(y_pred)
@@ -23,17 +24,35 @@ def calculate_simulated_pnl(y_true, y_pred, price_changes, starting_balance=1000
         if y_pred[i] == 1:  # Предсказание UP
             trades += 1
             if y_true[i] == 1 and price_changes[i] > 0:
-                profit = balance * (abs(price_changes[i]) / 100)
+                # УВЕЛИЧЕННАЯ награда за правильное предсказание
+                profit = balance * (abs(price_changes[i]) / 100) * 1.5  # было 1.0, стало 1.5x
                 balance += profit
                 wins += 1
             else:
-                loss = balance * (abs(price_changes[i]) / 100) * 0.5
+                # УМЕНЬШЕННЫЙ штраф за неправильное предсказание
+                loss = balance * (abs(price_changes[i]) / 100) * 0.3  # было 0.5, стало 0.3
                 balance -= loss
+        elif y_pred[i] == 0:  # Предсказание DOWN
+            trades += 1
+            if y_true[i] == 0 and price_changes[i] < 0:
+                # УВЕЛИЧЕННАЯ награда за правильное предсказание DOWN
+                profit = balance * (abs(price_changes[i]) / 100) * 1.5
+                balance += profit
+                wins += 1
+            else:
+                # УМЕНЬШЕННЫЙ штраф за неправильное предсказание
+                loss = balance * (abs(price_changes[i]) / 100) * 0.3
+                balance -= loss
+        else:
+            # ШТРАФ ЗА БЕЗДЕЙСТВИЕ (больше чем за ошибку!)
+            inaction_count += 1
+            penalty = balance * 0.005  # 0.5% штраф за каждое бездействие
+            balance -= penalty
     
     if trades == 0:
         return balance, 0, 0
     
-    win_rate = (wins / trades * 100)
+    win_rate = (wins / trades * 100) if trades > 0 else 0
     return balance, win_rate, trades
 
 

@@ -54,7 +54,6 @@ if __name__ == "__main__":
         "MATIC/USDT",
         "DOT/USDT",
         "AVAX/USDT",
-        "PEPE/USDT",
         "SUI/USDT",
         "ENA/USDT",
         "LTC/USDT",
