@@ -102,14 +102,21 @@ class PredictionLogger:
 
     def resolve_predictions(self, symbol, df, horizon=1):
         """Resolve pending predictions based on future candles in df."""
+        print(f"    🔍 resolve_predictions вызвана для {symbol}")
+        
         if not self.csv_log.exists() or df is None or len(df) == 0:
+            print(f"    ❌ Ошибка: CSV не существует или df пуст")
             return 0
 
         data = pd.read_csv(self.csv_log)
+        print(f"    📄 CSV загружен, всего строк: {len(data)}")
+        
         if len(data) == 0:
+            print(f"    ❌ CSV пуст")
             return 0
 
         if 'resolved' not in data.columns:
+            print(f"    ❌ Нет колонки 'resolved'")
             return 0
 
         # Конвертируем timestamp в datetime
@@ -126,6 +133,12 @@ class PredictionLogger:
             data['price_change_pct'].isna() | (data['price_change_pct'] == '') |
             data['price_change_abs'].isna() | (data['price_change_abs'] == '')
         )
+
+        print(f"    🔍 Для {symbol}: всего строк={len(data)}, с missing_change={missing_change.sum()}")
+        
+        # Проверяем resolved False или пусто
+        not_resolved = (data['resolved'].isna()) | (data['resolved'].astype(str).str.strip() != 'True')
+        print(f"    🔍 Не разрешённых: {not_resolved.sum()}, по символу {symbol}: {((data['symbol'] == symbol) & not_resolved).sum()}")
 
         pending_mask = (data['symbol'] == symbol) & (
             (data['resolved'].isna()) |

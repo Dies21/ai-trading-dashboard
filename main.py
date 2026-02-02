@@ -91,16 +91,20 @@ if __name__ == "__main__":
             for symbol, df in data_dict.items():
                 print(f"\n📊 Анализирую {symbol}...")
                 print("-" * 70)
+                print(f"   📋 df для {symbol} имеет {len(df)} свечей")
+                print(f"   📋 Колонки в df: {df.columns.tolist()}")
                 
                 # ПРОВЕРКА СТАРЫХ ПРОГНОЗОВ (resolve)
                 try:
+                    print(f"   🔄 Вызываю resolve_predictions...")
                     resolved_count = logger.resolve_predictions(symbol, df, horizon=1)
+                    print(f"   ✓ resolve_predictions вернула: {resolved_count}")
                     if resolved_count > 0:
                         print(f"   ✅ Разрешено {resolved_count} старых прогнозов")
                     else:
                         print(f"   ℹ️ Нет прогнозов для разрешения")
                 except Exception as e:
-                    print(f"   ⚠️ Ошибка при resolve: {e}")
+                    print(f"   ⚠️ ОШИБКА при resolve: {e}")
                     import traceback
                     traceback.print_exc()
                 
